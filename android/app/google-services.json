@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "390066654458",
+    "project_id": "topgrowthapp",
+    "storage_bucket": "topgrowthapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:390066654458:android:30124d91ed400634e00d43",
+        "android_client_info": {
+          "package_name": "com.example.top_grow_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRSVwpOmlAUkMWseDNNqKOgtPZ-s5QxnI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

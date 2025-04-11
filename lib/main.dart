@@ -1,0 +1,48 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart'; // Add Provider
+import 'package:top_grow_project/provider/auth_provider.dart';
+import 'package:top_grow_project/screens/buyer_home_screen.dart';
+import 'package:top_grow_project/screens/farmer_home_screen.dart';
+import 'firebase_options.dart';
+import 'package:top_grow_project/screens/buyer_login_screen.dart';
+import 'package:top_grow_project/screens/buyer_signup_screen.dart';
+import 'package:top_grow_project/screens/farmer_signup_screen.dart';
+import 'package:top_grow_project/screens/farmer_login_screen.dart';
+import 'package:top_grow_project/screens/role_selection.dart';
+import 'package:top_grow_project/screens/welcome_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()), // Provide AuthProvider
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        initialRoute: WelcomeScreen.id,
+        routes: {
+          WelcomeScreen.id: (context) => WelcomeScreen(),
+          RoleSelection.id: (context) => RoleSelection(),
+          FarmerLoginScreen.id: (context) => FarmerLoginScreen(),
+          FarmerSignupScreen.id: (context) => FarmerSignupScreen(),
+          BuyerLoginScreen.id: (context) => BuyerLoginScreen(),
+          BuyerSignupScreen.id: (context) => BuyerSignupScreen(),
+           FarmerHomeScreen.id: (context) => FarmerHomeScreen(),
+          BuyerHomeScreen.id : (context) => BuyerHomeScreen(),
+         },
+      ),
+    );
+  }
+}
