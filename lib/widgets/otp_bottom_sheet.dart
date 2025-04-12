@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:top_grow_project/provider/auth_provider.dart';
+
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
 import 'package:top_grow_project/screens/farmer_home_screen.dart';
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
+
+import '../provider/auth_provider.dart';
 
 class OtpBottomSheet extends StatefulWidget {
   final String phoneNumber; // Phone number being verified
@@ -67,23 +69,28 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
     super.dispose();
   }
 
-  // Verifies the OTP based on signup or login context
+  // Verifies the OTP using AuthProvider
   Future<void> _verifyCode() async {
     setState(() => _isLoading = true); // Show loading state
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (widget.isSignup) {
-        // Signup: Verify and save new user data
-        await authProvider.verifySignupCode(smsCode, widget.fullName ?? '', widget.role ?? '', context);
-      } else {
-        // Login: Verify existing user
-        await authProvider.verifyLoginCode(smsCode, context);
-      }
-      Navigator.pop(context); // Close bottom sheet
-      final role = widget.role ?? 'farmer'; // Default to farmer if role not provided
+      // Use the unified verifyOtpAndSignIn method from AuthProvider
+      await authProvider.verifyOtpAndSignIn(
+        authProvider.verificationId ?? '', // Assuming AuthProvider stores this
+        smsCode,
+        widget.isSignup ? (widget.fullName ?? '') : '', // Full name for signup
+        widget.role ?? 'farmer', // Default to 'farmer' if role not provided
+        context,
+      );
+
+      // Close bottom sheet
+      Navigator.pop(context);
+
+      // Navigate to the appropriate home screen based on role
+      final role = widget.role ?? 'farmer';
       Navigator.pushReplacementNamed(
         context,
-        role == 'farmer' ? FarmerHomeScreen.id : BuyerHomeScreen.id, // Navigate to appropriate home screen
+        role == 'farmer' ? FarmerHomeScreen.id : BuyerHomeScreen.id,
       );
     } catch (e) {
       // Error handling is done in AuthProvider; no additional action needed here

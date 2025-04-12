@@ -35,9 +35,9 @@ class MyApp extends StatelessWidget {
         routes: {
           WelcomeScreen.id: (context) => WelcomeScreen(),
           RoleSelection.id: (context) => RoleSelection(),
-          FarmerLoginScreen.id: (context) => FarmerLoginScreen(),
+          FarmerSigninScreen.id: (context) =>  FarmerSigninScreen(),
           FarmerSignupScreen.id: (context) => FarmerSignupScreen(),
-          BuyerLoginScreen.id: (context) => BuyerLoginScreen(),
+          BuyerSigninScreen.id: (context) => BuyerSigninScreen(),
           BuyerSignupScreen.id: (context) => BuyerSignupScreen(),
            FarmerHomeScreen.id: (context) => FarmerHomeScreen(),
           BuyerHomeScreen.id : (context) => BuyerHomeScreen(),

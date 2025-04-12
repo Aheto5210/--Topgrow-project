@@ -1,262 +1,271 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  User? _user; // Current authenticated user
-  String? _fullName; // User's full name loaded from Firestore
-  String? _verificationId; // Stores verification ID from phone auth
-  bool _isVerifying = false; // Tracks if verification is in progress
+  User? _user;
+  String? _fullName;
+  String? _role;
+  String? _verificationId; // Store verificationId for OTP verification
 
-  // Constructor: Listens to auth state changes and loads user data
+  User? get user => _user;
+  String? get fullName => _fullName;
+  String? get role => _role;
+  String? get verificationId => _verificationId;
+
   AuthProvider() {
     _auth.authStateChanges().listen((User? user) {
       _user = user;
       if (user != null) {
-        _loadUserData(user.uid).catchError((e) {
-          // Error handling for loading user data
-        });
+        _fetchUserData(user.uid);
+      } else {
+        _fullName = null;
+        _role = null;
+        notifyListeners();
       }
-      notifyListeners();1
     });
   }
 
-  // Getters for accessing private fields
-  User? get user => _user;
-  String? get fullName => _fullName;
-  bool get isAuthenticated => _user != null;
-  bool get isVerifying => _isVerifying;
-
-  // Starts phone number verification process
-  Future<void> startPhoneVerification(String phoneNumber, BuildContext context) async {
+  Future<void> _fetchUserData(String uid) async {
     try {
-      if (phoneNumber.isEmpty) {
-        throw Exception('Phone number cannot be empty');
+      DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        _fullName = doc['fullName'] as String?;
+        _role = doc['role'] as String?;
+        notifyListeners();
+      } else {
+        // If the document doesn't exist, sign the user out to prevent inconsistent state
+        await _auth.signOut();
+        notifyListeners();
       }
-      _isVerifying = true;
+    } catch (e) {
+
+      // Sign the user out to prevent inconsistent state
+      await _auth.signOut();
+      // Notify listeners to update the UI (e.g., redirect to sign-in screen)
       notifyListeners();
+      // Optionally, show an error message to the user
+      // Note: We can't show a SnackBar here directly because we don't have access to BuildContext
+      // This should be handled in the UI layer (e.g., in a Consumer<AuthProvider>)
+    }
+  }
+
+  // Validate full name using regex
+  String? validateFullName(String fullName) {
+    if (fullName.isEmpty) {
+      return 'Full name cannot be empty';
+    }
+    if (!RegExp(r'^[a-zA-Z\s]{2,50}$').hasMatch(fullName)) {
+      return 'Full name must contain only letters and spaces, and be 2-50 characters long';
+    }
+    return null;
+  }
+
+  // Validate phone number using regex
+  String? validatePhoneNumber(String phoneNumber) {
+    if (phoneNumber.isEmpty) {
+      return 'Phone number cannot be empty';
+    }
+    if (!RegExp(r'^\+\d{9,15}$').hasMatch(phoneNumber)) {
+      return 'Phone number must start with "+" followed by 9-15 digits (e.g., +233123456789)';
+    }
+    return null;
+  }
+
+  // Validate OTP using regex
+  String? validateOtp(String otp) {
+    if (otp.isEmpty) {
+      return 'OTP cannot be empty';
+    }
+    if (!RegExp(r'^\d{6}$').hasMatch(otp)) {
+      return 'OTP must be exactly 6 digits';
+    }
+    return null;
+  }
+
+  // Check if the phone number exists in Firestore
+  Future<bool> checkPhoneNumberExists(String phoneNumber) async {
+    try {
+      final query = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: phoneNumber)
+          .get();
+      return query.docs.isNotEmpty;
+    } catch (e) {
+      print('Error checking phone number: $e');
+      return false;
+    }
+  }
+
+  // Sign in with phone number (for login)
+  Future<void> signInWithPhoneNumber(
+      String phoneNumber,
+      BuildContext context,
+      Function(String) onCodeSent,
+      ) async {
+    try {
+      String? phoneError = validatePhoneNumber(phoneNumber);
+      if (phoneError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.red, content: Text(phoneError)),
+        );
+        return;
+      }
+
+      bool phoneExists = await checkPhoneNumberExists(phoneNumber);
+      if (!phoneExists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Phone number not found. Please sign up first.'),
+          ),
+        );
+        return;
+      }
 
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
-          try {
-            await _auth.signInWithCredential(credential);
-          } on FirebaseAuthException catch (e) {
-            _handleAuthError(e, context);
-          }
-          _isVerifying = false;
-          notifyListeners();
+          await _auth.signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
-          _handleAuthError(e, context);
-          _isVerifying = false;
-          notifyListeners();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red,
+              content: Text('Verification failed: ${e.message}'),
+            ),
+          );
         },
         codeSent: (String verificationId, int? resendToken) {
           _verificationId = verificationId;
-          _isVerifying = false;
-          notifyListeners();
+          onCodeSent(verificationId);
         },
         codeAutoRetrievalTimeout: (String verificationId) {
           _verificationId = verificationId;
-          _isVerifying = false;
-          notifyListeners();
         },
       );
     } catch (e) {
-      _handleGenericError(e, context);
-      _isVerifying = false;
-      notifyListeners();
-    }
-  }
-
-  // Verifies OTP for signup, only allows new users
-  Future<void> verifySignupCode(String smsCode, String fullName, String role, BuildContext context) async {
-    try {
-      if (_verificationId == null) {
-        throw Exception('No verification in progress. Please start verification first.');
-      }
-      if (smsCode.isEmpty) {
-        throw Exception('SMS code cannot be empty');
-      }
-      if (fullName.isEmpty || role.isEmpty) {
-        throw Exception('Full name and role are required for signup.');
-      }
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: smsCode,
-      );
-      final userCredential = await _auth.signInWithCredential(credential);
-
-      // Only new users can sign up
-      if (userCredential.additionalUserInfo!.isNewUser) {
-        await _saveUserData(userCredential.user!.uid, fullName, role);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Signup successful! Welcome aboard.')),
-        );
-      } else {
-        await _auth.signOut(); // Prevent login state
-        throw Exception('This phone number is already registered. Please sign in instead.');
-      }
-    } on FirebaseAuthException catch (e) {
-      throw _mapAuthError(e);
-    } on FirebaseException catch (e) {
-      throw _mapFirestoreError(e);
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(backgroundColor: Colors.red, content: Text('Error: $e')),
       );
-      rethrow; // Allow UI to handle navigation
     }
   }
 
-  // Verifies OTP for login, only allows existing users
-  Future<void> verifyLoginCode(String smsCode, BuildContext context) async {
+  // Sign up with phone number (for signup)
+  Future<void> signUpWithPhoneNumber(
+      String phoneNumber,
+      BuildContext context,
+      Function(String) onCodeSent,
+      ) async {
     try {
-      if (_verificationId == null) {
-        throw Exception('No verification in progress. Please start verification first.');
+      String? phoneError = validatePhoneNumber(phoneNumber);
+      if (phoneError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.red, content: Text(phoneError)),
+        );
+        return;
       }
-      if (smsCode.isEmpty) {
-        throw Exception('SMS code cannot be empty');
-      }
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: smsCode,
-      );
-      final userCredential = await _auth.signInWithCredential(credential);
 
-      // Only existing users can log in
-      if (!userCredential.additionalUserInfo!.isNewUser) {
+      bool phoneExists = await checkPhoneNumberExists(phoneNumber);
+      if (phoneExists) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor:  Color.fromRGBO(59, 135, 81, 1),
-              content: Text('Login successful! Welcome back.')),
+            backgroundColor: Colors.red,
+            content: Text('Phone number already exists. Please sign in instead.'),
+          ),
         );
-      } else {
-        await _auth.signOut(); // Prevent login state
-        throw Exception('No account found. Please sign up first.');
+        return;
       }
-    } on FirebaseAuthException catch (e) {
-      throw _mapAuthError(e);
+
+      await _auth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await _auth.signInWithCredential(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red,
+              content: Text('Verification failed: ${e.message}'),
+            ),
+          );
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          _verificationId = verificationId;
+          onCodeSent(verificationId);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: Colors.red, content: Text('Error: $e')),
+      );
+    }
+  }
+
+  // Verify OTP and sign in
+  Future<void> verifyOtpAndSignIn(
+      String verificationId,
+      String smsCode,
+      String fullName,
+      String role,
+      BuildContext context,
+      ) async {
+    try {
+      String? otpError = validateOtp(smsCode);
+      if (otpError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.red, content: Text(otpError)),
+        );
+        return;
+      }
+
+      if (fullName.isNotEmpty) {
+        String? nameError = validateFullName(fullName);
+        if (nameError != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(backgroundColor: Colors.red, content: Text(nameError)),
+          );
+          return;
+        }
+      }
+
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      UserCredential userCredential = await _auth.signInWithCredential(credential);
+      if (userCredential.user != null && fullName.isNotEmpty) {
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'fullName': fullName,
+          'phoneNumber': userCredential.user!.phoneNumber,
+          'role': role,
+        }, SetOptions(merge: true));
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-             backgroundColor:Colors.red,
-            content: Text(e.toString())),
+          backgroundColor: Colors.red,
+          content: Text('Error verifying OTP: $e'),
+        ),
       );
-      rethrow; // Allow UI to handle navigation
     }
   }
 
-  // Saves user data to Firestore during signup
-  Future<void> _saveUserData(String uid, String fullName, String role) async {
-    try {
-      await _firestore.collection('users').doc(uid).set({
-        'fullName': fullName,
-        'phoneNumber': _user!.phoneNumber,
-        'role': role,
-      });
-      _fullName = fullName;
-      notifyListeners();
-    } on FirebaseException catch (e) {
-      throw _mapFirestoreError(e);
-    } catch (e) {
-      throw Exception('Failed to save user data: ${e.toString()}');
-    }
-  }
-
-  // Loads user data from Firestore on auth state change
-  Future<void> _loadUserData(String uid) async {
-    try {
-      final doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists) {
-        _fullName = doc['fullName'];
-        notifyListeners();
-      }
-    } on FirebaseException catch (e) {
-      throw _mapFirestoreError(e);
-    } catch (e) {
-      throw Exception('Failed to load user data: ${e.toString()}');
-    }
-  }
-
-  // Signs out the user and clears local data
+  // Sign out
   Future<void> signOut() async {
     try {
       await _auth.signOut();
       _fullName = null;
-      _verificationId = null;
+      _role = null;
+      _verificationId = null; // Clear verificationId on sign-out
       notifyListeners();
-    } on FirebaseAuthException catch (e) {
-      throw _mapAuthError(e);
     } catch (e) {
-      throw Exception('Failed to sign out: ${e.toString()}');
+      print('Error signing out: $e');
     }
-  }
-
-  // Displays Firebase Auth errors to the user
-  void _handleAuthError(FirebaseAuthException e, BuildContext context) {
-    String message;
-    switch (e.code) {
-      case 'invalid-phone-number':
-        message = 'The phone number format is invalid. Please use +[country code][number].';
-        break;
-      case 'invalid-verification-code':
-        message = 'The SMS code is incorrect. Please try again.';
-        break;
-      case 'quota-exceeded':
-        message = 'SMS quota exceeded. Please try again later.';
-        break;
-      case 'network-request-failed':
-        message = 'Network error. Please check your internet connection.';
-        break;
-      case 'user-disabled':
-        message = 'This user account has been disabled.';
-        break;
-      default:
-        message = e.message ?? 'Authentication failed. Please try again.';
-    }
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-         backgroundColor:Colors.red,
-        content: Text(message)));
-  }
-
-  // Maps Firebase Auth errors to exceptions
-  Exception _mapAuthError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-verification-code':
-        return Exception('Incorrect SMS code. Please try again.');
-      case 'network-request-failed':
-        return Exception('Network error. Please check your connection.');
-      case 'too-many-requests':
-        return Exception('Too many attempts. Please wait before trying again.');
-      default:
-        return Exception('Authentication error: ${e.message ?? e.code}');
-    }
-  }
-
-  // Maps Firestore errors to exceptions
-  Exception _mapFirestoreError(FirebaseException e) {
-    switch (e.code) {
-      case 'permission-denied':
-        return Exception('Permission denied. Cannot access user data.');
-      case 'unavailable':
-        return Exception('Firestore is unavailable. Please check your connection.');
-      case 'not-found':
-        return Exception('User data not found.');
-      default:
-        return Exception('Firestore error: ${e.message ?? e.code}');
-    }
-  }
-
-  // Displays generic errors to the user
-  void _handleGenericError(dynamic e, BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          backgroundColor:Colors.red,
-          content: Text(e.toString())),
-    );
   }
 }
