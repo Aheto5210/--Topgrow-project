@@ -84,92 +84,94 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
 
         return Scaffold(
           backgroundColor: iykBackgroundColor,
-          body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Center(
-                  child: Hero(
-                    tag: 'logo',
-                    child: SizedBox(
-                      height: 200,
-                      child: Image.asset('assets/images/logo.png'),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Center(
+                    child: Hero(
+                      tag: 'logo',
+                      child: SizedBox(
+                        height: 200,
+                        child: Image.asset('assets/images/logo.png'),
+                      ),
                     ),
                   ),
-                ),
-                RichText(
-                  text: const TextSpan(
-                    text: 'Create A New',
-                    style: TextStyle(
-                      fontFamily: 'Qwerty',
-                      fontSize: 25,
-                      color: Color.fromRGBO(59, 135, 81, 1),
+                  RichText(
+                    text: const TextSpan(
+                      text: 'Create A New',
+                      style: TextStyle(
+                        fontFamily: 'Qwerty',
+                        fontSize: 25,
+                        color: Color.fromRGBO(59, 135, 81, 1),
+                      ),
+                      children: [
+                        TextSpan(
+                          text: ' Farmer Account',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Qwerty',
+                            fontSize: 25,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Sign Up as a Farmer',
+                    style: TextStyle(
+                      fontFamily: 'qwerty',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                      color: Color.fromRGBO(121, 121, 121, 1),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  CustomTextfield(
+                    hintText: 'Enter fullname',
+                    controller: _fullnameController,
+                    keyboardType: TextInputType.text,
+                  ),
+                  const SizedBox(height: 20),
+                  CustomTextfield(
+                    hintText: 'Phone Number (e.g., +233123456789)',
+                    controller: _phonenumberController,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 20),
+                  CustomElevatedButton(
+                    text: 'Create Account',
+                    onPressed: _isLoading ? null : _startSignup,
+                    isLoading: _isLoading,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      TextSpan(
-                        text: ' Farmer Account',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w400,
-                          fontFamily: 'Qwerty',
-                          fontSize: 25,
-                          color: Colors.black,
+                      const Text(
+                        "Already have an account?",
+                        style: TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, FarmerSigninScreen.id);
+                        },
+                        child: const Text(
+                          'Sign in',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromRGBO(59, 135, 81, 1),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Sign Up as a Farmer',
-                  style: TextStyle(
-                    fontFamily: 'qwerty',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    color: Color.fromRGBO(121, 121, 121, 1),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                CustomTextfield(
-                  hintText: 'Enter fullname',
-                  controller: _fullnameController,
-                  keyboardType: TextInputType.text,
-                ),
-                const SizedBox(height: 20),
-                CustomTextfield(
-                  hintText: 'Phone Number (e.g., +233123456789)',
-                  controller: _phonenumberController,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 20),
-                CustomElevatedButton(
-                  text: 'Create Account',
-                  onPressed: _isLoading ? null : _startSignup,
-                  isLoading: _isLoading,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Already have an account?",
-                      style: TextStyle(fontSize: 16, color: Colors.black54),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, FarmerSigninScreen.id);
-                      },
-                      child: const Text(
-                        'Sign in',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromRGBO(59, 135, 81, 1),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

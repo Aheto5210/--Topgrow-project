@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:top_grow_project/constants.dart';
 
 
  class FarmerHomeScreen extends StatefulWidget {
@@ -12,6 +13,8 @@ import 'package:flutter/material.dart';
  class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
    @override
    Widget build(BuildContext context) {
-     return Scaffold();
+     return Scaffold(
+        backgroundColor: iykBackgroundColor,  
+     );
    }
  }

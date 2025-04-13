@@ -82,94 +82,96 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
 
         return Scaffold(
           backgroundColor: iykBackgroundColor,
-          body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Center(
-                  child: Hero(
-                    tag: 'logo',
-                    child: SizedBox(
-                      height: 200,
-                      child: Image.asset('assets/images/logo.png'),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Center(
+                    child: Hero(
+                      tag: 'logo',
+                      child: SizedBox(
+                        height: 200,
+                        child: Image.asset('assets/images/logo.png'),
+                      ),
                     ),
                   ),
-                ),
-                RichText(
-                  text: const TextSpan(
-                    text: 'Sign In To Your',
-                    style: TextStyle(
-                      fontFamily: 'Qwerty',
-                      fontSize: 25,
-                      color: Color.fromRGBO(59, 135, 81, 1),
+                  RichText(
+                    text: const TextSpan(
+                      text: 'Sign In To Your',
+                      style: TextStyle(
+                        fontFamily: 'Qwerty',
+                        fontSize: 25,
+                        color: Color.fromRGBO(59, 135, 81, 1),
+                      ),
+                      children: [
+                        TextSpan(
+                          text: ' Farmer Account',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Qwerty',
+                            fontSize: 25,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Login as a Farmer',
+                    style: TextStyle(
+                      fontFamily: 'qwerty',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                      color: Color.fromRGBO(121, 121, 121, 1),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  CustomTextfield(
+                    hintText: 'Phone Number (e.g., +233123456789)',
+                    controller: _phonenumberController,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 20),
+                  CustomElevatedButton(
+                    text: 'Sign in',
+                    onPressed: _isLoading ? null : _startLogin,
+                    isLoading: _isLoading,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      TextSpan(
-                        text: ' Farmer Account',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w400,
-                          fontFamily: 'Qwerty',
-                          fontSize: 25,
-                          color: Colors.black,
+                      const Text(
+                        "Don't have an account?",
+                        style: TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          final role =
+                              ModalRoute.of(context)!.settings.arguments
+                                  as String? ??
+                              'farmer';
+                          Navigator.pushNamed(
+                            context,
+                            FarmerSignupScreen.id,
+                            arguments: role,
+                          );
+                        },
+                        child: const Text(
+                          'Sign Up',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromRGBO(59, 135, 81, 1),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Login as a Farmer',
-                  style: TextStyle(
-                    fontFamily: 'qwerty',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    color: Color.fromRGBO(121, 121, 121, 1),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                CustomTextfield(
-                  hintText: 'Phone Number (e.g., +233123456789)',
-                  controller: _phonenumberController,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 20),
-                CustomElevatedButton(
-                  text: 'Sign in',
-                  onPressed: _isLoading ? null : _startLogin,
-                  isLoading: _isLoading,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Don't have an account?",
-                      style: TextStyle(fontSize: 16, color: Colors.black54),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        final role =
-                            ModalRoute.of(context)!.settings.arguments
-                                as String? ??
-                            'farmer';
-                        Navigator.pushNamed(
-                          context,
-                          FarmerSignupScreen.id,
-                          arguments: role,
-                        );
-                      },
-                      child: const Text(
-                        'Sign Up',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromRGBO(59, 135, 81, 1),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
