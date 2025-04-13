@@ -25,7 +25,7 @@ class _RoleSelectionState extends State<RoleSelection> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) { // Ensure the widget is still mounted before calling setState
+      if (mounted) {
         setState(() {
           _opacity = 1.0;
           _skipButtonPosition = 20;
@@ -38,7 +38,7 @@ class _RoleSelectionState extends State<RoleSelection> {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Redirect to the appropriate dashboard if user is already signed in
+
         if (authProvider.user != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (authProvider.role == 'farmer') {

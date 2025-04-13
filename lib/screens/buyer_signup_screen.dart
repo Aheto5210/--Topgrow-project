@@ -63,7 +63,7 @@ class _BuyerSignupScreenState extends State<BuyerSignupScreen> {
         },
       );
     } catch (e) {
-      // Error handling is already done in AuthProvider, but we can log for debugging
+
     } finally {
       setState(() => _isLoading = false);
     }
@@ -73,7 +73,7 @@ class _BuyerSignupScreenState extends State<BuyerSignupScreen> {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Redirect to dashboard if user is already signed in
+
         if (authProvider.user != null && authProvider.role == 'buyer') {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.pushReplacementNamed(context, BuyerHomeScreen.id);

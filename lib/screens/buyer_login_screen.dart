@@ -62,7 +62,7 @@ class _BuyerSigninScreenState extends State<BuyerSigninScreen> {
         );
       });
     } catch (e) {
-      // Error handling is already done in AuthProvider, but we can log for debugging
+
     } finally {
       setState(() => _isLoading = false);
     }

@@ -76,7 +76,7 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       // Use the unified verifyOtpAndSignIn method from AuthProvider
       await authProvider.verifyOtpAndSignIn(
-        authProvider.verificationId ?? '', // Assuming AuthProvider stores this
+        authProvider.verificationId ?? '',
         smsCode,
         widget.isSignup ? (widget.fullName ?? '') : '', // Full name for signup
         widget.role ?? 'farmer', // Default to 'farmer' if role not provided
@@ -93,7 +93,7 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
         role == 'farmer' ? FarmerHomeScreen.id : BuyerHomeScreen.id,
       );
     } catch (e) {
-      // Error handling is done in AuthProvider; no additional action needed here
+
     } finally {
       setState(() => _isLoading = false); // Reset loading state
     }

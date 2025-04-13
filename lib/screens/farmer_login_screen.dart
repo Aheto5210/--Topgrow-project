@@ -62,7 +62,7 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
         );
       });
     } catch (e) {
-      // Error handling is already done in AuthProvider, but we can log for debugging
+
       print('Error in _startLogin: $e');
     } finally {
       setState(() => _isLoading = false);

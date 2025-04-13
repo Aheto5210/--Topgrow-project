@@ -16,18 +16,25 @@ class AuthProvider with ChangeNotifier {
   String? get verificationId => _verificationId;
 
   AuthProvider() {
-    _auth.authStateChanges().listen((User? user) {
-      _user = user;
-      if (user != null) {
-        _fetchUserData(user.uid);
-      } else {
-        _fullName = null;
-        _role = null;
-        notifyListeners();
-      }
-    });
+    // On initialization, sign out to clear any persisted session
+    _signOutOnInit();
   }
 
+  // Sign out on initialization to prevent auto sign-in
+  Future<void> _signOutOnInit() async {
+    try {
+      await _auth.signOut();
+      _user = null;
+      _fullName = null;
+      _role = null;
+      _verificationId = null;
+      notifyListeners();
+    } catch (e) {
+      print('Error signing out on init: $e');
+    }
+  }
+
+  // Fetch user data from Firestore after manual sign-in
   Future<void> _fetchUserData(String uid) async {
     try {
       DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
@@ -38,17 +45,19 @@ class AuthProvider with ChangeNotifier {
       } else {
         // If the document doesn't exist, sign the user out to prevent inconsistent state
         await _auth.signOut();
+        _user = null;
+        _fullName = null;
+        _role = null;
         notifyListeners();
       }
     } catch (e) {
-
+      print('Error fetching user data: $e');
       // Sign the user out to prevent inconsistent state
       await _auth.signOut();
-      // Notify listeners to update the UI (e.g., redirect to sign-in screen)
+      _user = null;
+      _fullName = null;
+      _role = null;
       notifyListeners();
-      // Optionally, show an error message to the user
-      // Note: We can't show a SnackBar here directly because we don't have access to BuildContext
-      // This should be handled in the UI layer (e.g., in a Consumer<AuthProvider>)
     }
   }
 
@@ -128,7 +137,12 @@ class AuthProvider with ChangeNotifier {
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
-          await _auth.signInWithCredential(credential);
+          UserCredential userCredential = await _auth.signInWithCredential(credential);
+          _user = userCredential.user;
+          if (_user != null) {
+            await _fetchUserData(_user!.uid);
+          }
+          notifyListeners();
         },
         verificationFailed: (FirebaseAuthException e) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -182,7 +196,12 @@ class AuthProvider with ChangeNotifier {
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
-          await _auth.signInWithCredential(credential);
+          UserCredential userCredential = await _auth.signInWithCredential(credential);
+          _user = userCredential.user;
+          if (_user != null) {
+            await _fetchUserData(_user!.uid);
+          }
+          notifyListeners();
         },
         verificationFailed: (FirebaseAuthException e) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -239,13 +258,18 @@ class AuthProvider with ChangeNotifier {
         smsCode: smsCode,
       );
       UserCredential userCredential = await _auth.signInWithCredential(credential);
-      if (userCredential.user != null && fullName.isNotEmpty) {
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'fullName': fullName,
-          'phoneNumber': userCredential.user!.phoneNumber,
-          'role': role,
-        }, SetOptions(merge: true));
+      _user = userCredential.user;
+      if (_user != null) {
+        if (fullName.isNotEmpty) {
+          await _firestore.collection('users').doc(_user!.uid).set({
+            'fullName': fullName,
+            'phoneNumber': _user!.phoneNumber,
+            'role': role,
+          }, SetOptions(merge: true));
+        }
+        await _fetchUserData(_user!.uid);
       }
+      notifyListeners();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -260,9 +284,10 @@ class AuthProvider with ChangeNotifier {
   Future<void> signOut() async {
     try {
       await _auth.signOut();
+      _user = null;
       _fullName = null;
       _role = null;
-      _verificationId = null; // Clear verificationId on sign-out
+      _verificationId = null;
       notifyListeners();
     } catch (e) {
       print('Error signing out: $e');
