@@ -42,9 +42,9 @@ class _RoleSelectionState extends State<RoleSelection> {
         if (authProvider.user != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (authProvider.role == 'farmer') {
-              Navigator.pushReplacementNamed(context, 'farmer_dashboard');
+              Navigator.pushReplacementNamed(context, FarmerSigninScreen.id);
             } else if (authProvider.role == 'buyer') {
-              Navigator.pushReplacementNamed(context, 'buyer_dashboard');
+              Navigator.pushReplacementNamed(context, BuyerSigninScreen.id);
             }
           });
         }

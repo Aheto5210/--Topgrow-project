@@ -7,7 +7,9 @@ import 'package:top_grow_project/widgets/custom_elevated_button.dart';
 import 'package:top_grow_project/widgets/custom_textfield.dart';
 import 'package:top_grow_project/widgets/otp_bottom_sheet.dart';
 
+import '../home_bot_nav.dart';
 import '../provider/auth_provider.dart';
+import 'buyer_home_screen.dart';
 import 'farmer_home_screen.dart';
 
 class FarmerSigninScreen extends StatefulWidget {
@@ -62,7 +64,6 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
         );
       });
     } catch (e) {
-
       print('Error in _startLogin: $e');
     } finally {
       setState(() => _isLoading = false);
@@ -76,7 +77,14 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
         // Redirect to dashboard if user is already signed in
         if (authProvider.user != null && authProvider.role == 'farmer') {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, FarmerHomeScreen.id);
+            if (!context.mounted) return;
+            final role =
+                ModalRoute.of(context)!.settings.arguments as String? ??
+                    'farmer';
+            Navigator.pushReplacementNamed(
+              context,
+              role == 'farmer' ? HomeBotnav.id : BuyerHomeScreen.id,
+            );
           });
         }
 

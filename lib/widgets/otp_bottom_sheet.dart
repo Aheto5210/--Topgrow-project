@@ -3,9 +3,10 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
 
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
-import 'package:top_grow_project/screens/farmer_home_screen.dart';
+
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
 
+import '../home_bot_nav.dart';
 import '../provider/auth_provider.dart';
 
 class OtpBottomSheet extends StatefulWidget {
@@ -24,24 +25,25 @@ class OtpBottomSheet extends StatefulWidget {
 
   // Static method to show the bottom sheet
   static void show(
-      BuildContext context,
-      String phoneNumber, {
-        String? fullName,
-        String? role,
-        bool isSignup = false,
-      }) {
+    BuildContext context,
+    String phoneNumber, {
+    String? fullName,
+    String? role,
+    bool isSignup = false,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
       ),
-      builder: (context) => OtpBottomSheet(
-        phoneNumber: phoneNumber,
-        fullName: fullName,
-        role: role,
-        isSignup: isSignup,
-      ),
+      builder:
+          (context) => OtpBottomSheet(
+            phoneNumber: phoneNumber,/**/
+            fullName: fullName,
+            role: role,
+            isSignup: isSignup,
+          ),
     );
   }
 
@@ -51,23 +53,7 @@ class OtpBottomSheet extends StatefulWidget {
 
 class _OtpBottomSheetState extends State<OtpBottomSheet> {
   String smsCode = ''; // Stores the entered OTP
-  late FocusNode _pinFocusNode; // Focus node for OTP input field
   bool _isLoading = false; // Tracks loading state for UI feedback
-
-  @override
-  void initState() {
-    super.initState();
-    _pinFocusNode = FocusNode();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _pinFocusNode.requestFocus(); // Auto-focus OTP input
-    });
-  }
-
-  @override
-  void dispose() {
-    _pinFocusNode.dispose();
-    super.dispose();
-  }
 
   // Verifies the OTP using AuthProvider
   Future<void> _verifyCode() async {
@@ -90,10 +76,9 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
       final role = widget.role ?? 'farmer';
       Navigator.pushReplacementNamed(
         context,
-        role == 'farmer' ? FarmerHomeScreen.id : BuyerHomeScreen.id,
+        role == 'farmer' ? HomeBotnav.id : BuyerHomeScreen.id,
       );
     } catch (e) {
-
     } finally {
       setState(() => _isLoading = false); // Reset loading state
     }
@@ -103,7 +88,7 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom, // Adjust for keyboard
+        bottom: MediaQuery.of(context).viewInsets.bottom, //
       ),
       child: Container(
         padding: const EdgeInsets.all(16.0),
@@ -126,11 +111,14 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
             ),
             const SizedBox(height: 30),
             PinCodeTextField(
+              autoFocus: true,
               appContext: context,
-              length: 6, // 6-digit OTP
-              focusNode: _pinFocusNode,
-              onChanged: (value) => setState(() => smsCode = value), // Update smsCode as user types
-              onCompleted: (_) => _verifyCode(), // Auto-verify when complete
+              length: 6,
+              // 6-digit OTP
+              onChanged: (value) => setState(() => smsCode = value),
+              // Update smsCode as user types
+              onCompleted: (_) => _verifyCode(),
+              // Auto-verify when complete
               keyboardType: TextInputType.number,
               pinTheme: PinTheme(
                 shape: PinCodeFieldShape.box,
@@ -151,7 +139,10 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
             const SizedBox(height: 20),
             CustomElevatedButton(
               text: _isLoading ? 'Verifying...' : 'Verify', // Show loading text
-              onPressed: _isLoading ? null : _verifyCode, // Disable button during loading
+              onPressed:
+                  _isLoading
+                      ? null
+                      : _verifyCode, // Disable button during loading
             ),
           ],
         ),

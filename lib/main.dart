@@ -4,6 +4,9 @@ import 'package:provider/provider.dart'; // Add Provider
 import 'package:top_grow_project/provider/auth_provider.dart';
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
 import 'package:top_grow_project/screens/farmer_home_screen.dart';
+import 'package:top_grow_project/screens/product_screen.dart';
+import 'package:top_grow_project/screens/profile_screen.dart';
+import 'package:top_grow_project/screens/views_screen.dart';
 import 'firebase_options.dart';
 import 'package:top_grow_project/screens/buyer_login_screen.dart';
 import 'package:top_grow_project/screens/buyer_signup_screen.dart';
@@ -12,11 +15,11 @@ import 'package:top_grow_project/screens/farmer_login_screen.dart';
 import 'package:top_grow_project/screens/role_selection.dart';
 import 'package:top_grow_project/screens/welcome_screen.dart';
 
+import 'home_bot_nav.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -27,7 +30,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()), // Provide AuthProvider
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // Provide AuthProvider
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -35,13 +39,17 @@ class MyApp extends StatelessWidget {
         routes: {
           WelcomeScreen.id: (context) => WelcomeScreen(),
           RoleSelection.id: (context) => RoleSelection(),
-          FarmerSigninScreen.id: (context) =>  FarmerSigninScreen(),
+          FarmerSigninScreen.id: (context) => FarmerSigninScreen(),
           FarmerSignupScreen.id: (context) => FarmerSignupScreen(),
           BuyerSigninScreen.id: (context) => BuyerSigninScreen(),
           BuyerSignupScreen.id: (context) => BuyerSignupScreen(),
-           FarmerHomeScreen.id: (context) => FarmerHomeScreen(),
-          BuyerHomeScreen.id : (context) => BuyerHomeScreen(),
-         },
+          FarmerHomeScreen.id: (context) => FarmerHomeScreen(),
+          BuyerHomeScreen.id: (context) => BuyerHomeScreen(),
+          ProductScreen.id: (context) => ProductScreen(),
+          ProfileScreen.id: (context) => ProfileScreen(),
+          ViewsScreen.id: (context) => ViewsScreen(),
+          HomeBotnav.id: (context) => HomeBotnav(),
+        },
       ),
     );
   }

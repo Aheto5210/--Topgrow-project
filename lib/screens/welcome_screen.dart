@@ -122,7 +122,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
               ),
             ),
           ),
-          const SizedBox(height: 20),
 
           // Welcome button with fade-in animation
           FadeTransition(
