@@ -1,11 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart'; // Add Provider
 import 'package:top_grow_project/provider/auth_provider.dart';
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
 import 'package:top_grow_project/screens/farmer_home_screen.dart';
+import 'package:top_grow_project/screens/filter_screen.dart';
 import 'package:top_grow_project/screens/product_screen.dart';
 import 'package:top_grow_project/screens/profile_screen.dart';
+import 'package:top_grow_project/screens/search_screen.dart';
 import 'package:top_grow_project/screens/views_screen.dart';
 import 'firebase_options.dart';
 import 'package:top_grow_project/screens/buyer_login_screen.dart';
@@ -49,6 +52,8 @@ class MyApp extends StatelessWidget {
           ProfileScreen.id: (context) => ProfileScreen(),
           ViewsScreen.id: (context) => ViewsScreen(),
           HomeBotnav.id: (context) => HomeBotnav(),
+          SearchScreen.id: (context) => SearchScreen(),
+          FilterScreen.id: (context) => FilterScreen(),
         },
       ),
     );

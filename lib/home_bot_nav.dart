@@ -34,7 +34,7 @@ class _HomeBotnavState extends State<HomeBotnav> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: Colors.white,
+
       body: _widgetOptions.elementAt(_selectedIndex), // Display the selected screen
       bottomNavigationBar: CustomBottomBarNav(
         currentIndex: _selectedIndex,

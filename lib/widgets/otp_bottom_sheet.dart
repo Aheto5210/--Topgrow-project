@@ -39,7 +39,7 @@ class OtpBottomSheet extends StatefulWidget {
       ),
       builder:
           (context) => OtpBottomSheet(
-            phoneNumber: phoneNumber,/**/
+            phoneNumber: phoneNumber,
             fullName: fullName,
             role: role,
             isSignup: isSignup,

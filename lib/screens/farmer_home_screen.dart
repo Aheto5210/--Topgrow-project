@@ -2,23 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../widgets/custom_appbar.dart';
 
-class FarmerHomeScreen extends StatefulWidget {
+class FarmerHomeScreen extends StatelessWidget {
   static String id = 'farmer_home_screen';
 
   const FarmerHomeScreen({super.key});
-
-  @override
-  State<FarmerHomeScreen> createState() => _FarmerHomeScreenState();
-}
-
-class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
-  final TextEditingController _searchcontroller = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchcontroller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:top_grow_project/screens/filter_screen.dart';
+import 'package:top_grow_project/screens/search_screen.dart';
 
 class CustomAppbar extends StatefulWidget {
   final String hintText;
@@ -50,6 +52,10 @@ class _CustomAppbarState extends State<CustomAppbar> {
             ),
             const SizedBox(height: 30),
             TextField(
+              onTap: (){
+           Navigator.pushNamed(context, SearchScreen.id);
+              },
+              readOnly: true,
               controller: widget.controller,
               decoration: InputDecoration(
                 hintText: widget.hintText,
@@ -60,7 +66,8 @@ class _CustomAppbarState extends State<CustomAppbar> {
                   color: Colors.grey,
                 ),
                 suffixIcon: IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, FilterScreen.id);                  },
                   icon: const Icon(Icons.tune_outlined),
                 ),
                 filled: true,
