@@ -1,6 +1,8 @@
+// Core Flutter package for building the UI with widgets like Scaffold, Column, and Text.
 import 'package:flutter/material.dart';
+// Navigation target for the "Welcome" button, takes users to the role selection screen.
 import 'package:top_grow_project/screens/role_selection.dart';
-
+// Custom animation manager for handling slick slide and fade effects on this screen.
 import '../widgets/animation_manager.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -13,159 +15,187 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
-  // Animation manager to handle all animations
   late WelcomeScreenAnimationManager _animationManager;
 
   @override
   void initState() {
     super.initState();
-    // Initialize the animation manager
     _animationManager = WelcomeScreenAnimationManager(this);
   }
 
   @override
   void dispose() {
-    // Dispose of the animation manager
     _animationManager.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final textScaler = MediaQuery.of(context).textScaler;
+
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(255, 255, 255, 1),
-      body: Column(
-        children: [
-          // Top-right image with slide-in animation
-          SlideTransition(
-            position: _animationManager.slideFromRightAnimation,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                SizedBox(
-                  height: 130,
-                  child: Image.asset('assets/images/Timg.png'),
-                ),
-              ],
-            ),
-          ),
-
-          // Logo with fade-in and scale animation
-          FadeTransition(
-            opacity: _animationManager.fadeAnimation,
-            child: ScaleTransition(
-              scale: _animationManager.scaleAnimation,
-              child: SizedBox(
-                height: 290,
-                child: Image.asset('assets/images/logo.png'),
-              ),
-            ),
-          ),
-
-          // Bottom-left image with slide-in animation
-          SlideTransition(
-            position: _animationManager.slideFromLeftAnimation,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 190,
-                  child: Image.asset('assets/images/hand.png'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 30),
-
-          // Welcome text with fade-in animation
-          FadeTransition(
-            opacity: _animationManager.fadeAnimation,
-            child: Text(
-              'Welcome to',
-              style: TextStyle(
-                fontFamily: 'qwerty',
-                fontWeight: FontWeight.w400,
-                fontSize: 21,
-              ),
-            ),
-          ),
-
-          // Text with fade-in animation
-          FadeTransition(
-            opacity: _animationManager.fadeAnimation,
-            child: Text(
-              'TopGrow Ghana',
-              style: TextStyle(
-                fontFamily: 'ytrewq',
-                fontWeight: FontWeight.w700,
-                fontSize: 23,
-                color: const Color.fromRGBO(49, 109, 72, 1),
-              ),
-            ),
-          ),
-
-          // Text with fade-in animation
-          FadeTransition(
-            opacity: _animationManager.fadeAnimation,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-              child: Text(
-                'Digital marketplace that empowers farmers to showcase their produce directly to buyers.',
-                style: TextStyle(
-                  fontFamily: 'qwerty',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 16,
-                  color: const Color.fromRGBO(121, 121, 121, 1),
-                ),
-                textAlign: TextAlign.center,
-                softWrap: true,
-              ),
-            ),
-          ),
-
-          // Welcome button with fade-in animation
-          FadeTransition(
-            opacity: _animationManager.fadeAnimation,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(59, 135, 81, 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 15,
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.pushNamed(context, RoleSelection.id);
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Welcome',
-                      style: TextStyle(
-                        fontFamily: 'qwerty',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Top-right image pinned to the edge
+              SlideTransition(
+                position: _animationManager.slideFromRightAnimation,
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: SizedBox(
+                    height: (screenHeight * 0.15).clamp(80, 150),
+                    width: (screenWidth * 0.4).clamp(100, 200),
+                    child: Image.asset(
+                      'assets/images/Timg.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
                     ),
-                    const SizedBox(width: 15),
-                    const Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                      size: 25,
+                  ),
+                ),
+              ),
+
+              // Logo
+              FadeTransition(
+                opacity: _animationManager.fadeAnimation,
+                child: ScaleTransition(
+                  scale: _animationManager.scaleAnimation,
+                  child: SizedBox(
+                    height: (screenHeight * 0.25).clamp(120, 200),
+                    width: (screenWidth * 0.6).clamp(150, 300),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Bottom-left image
+              SlideTransition(
+                position: _animationManager.slideFromLeftAnimation,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: (screenHeight * 0.2).clamp(100, 180),
+                      width: (screenWidth * 0.5).clamp(120, 250),
+                      child: Image.asset(
+                        'assets/images/hand.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
+              SizedBox(height: screenHeight * 0.03),
+
+              // Welcome text
+              FadeTransition(
+                opacity: _animationManager.fadeAnimation,
+                child: Text(
+                  'Welcome to',
+                  style: TextStyle(
+                    fontFamily: 'qwerty',
+                    fontWeight: FontWeight.w400,
+                    fontSize: textScaler.scale(screenWidth * 0.05).clamp(14, 24),
+                  ),
+                ),
+              ),
+
+              // TopGrow Ghana text
+              FadeTransition(
+                opacity: _animationManager.fadeAnimation,
+                child: Text(
+                  'TopGrow Ghana',
+                  style: TextStyle(
+                    fontFamily: 'ytrewq',
+                    fontWeight: FontWeight.w700,
+                    fontSize: textScaler.scale(screenWidth * 0.06).clamp(16, 28),
+                    color: const Color.fromRGBO(49, 109, 72, 1),
+                  ),
+                ),
+              ),
+
+              // Description text
+              FadeTransition(
+                opacity: _animationManager.fadeAnimation,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: (screenWidth * 0.1).clamp(16, 40),
+                    vertical: screenHeight * 0.02,
+                  ),
+                  child: Text(
+                    'Digital marketplace that empowers farmers to showcase their produce directly to buyers.',
+                    style: TextStyle(
+                      fontFamily: 'qwerty',
+                      fontWeight: FontWeight.w400,
+                      fontSize: textScaler.scale(screenWidth * 0.04).clamp(12, 20),
+                      color: const Color.fromRGBO(121, 121, 121, 1),
+                    ),
+                    textAlign: TextAlign.center,
+                    softWrap: true,
+                  ),
+                ),
+              ),
+
+              // Welcome button
+              FadeTransition(
+                opacity: _animationManager.fadeAnimation,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: (screenWidth * 0.08).clamp(12, 32),
+                    vertical: screenHeight * 0.03,
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(59, 135, 81, 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.02,
+                        horizontal: screenWidth * 0.05,
+                      ),
+                      minimumSize: Size(screenWidth * 0.8, screenHeight * 0.07),
+                    ),
+                    onPressed: () {
+                      Navigator.pushNamed(context, RoleSelection.id);
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Welcome',
+                          style: TextStyle(
+                            fontFamily: 'qwerty',
+                            fontSize: textScaler.scale(screenWidth * 0.05).clamp(14, 24),
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: screenWidth * 0.04),
+                        const Icon(
+                          Icons.arrow_forward,
+                          color: Colors.white,
+                          size: 25,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:top_grow_project/widgets/filter.dart';
+import 'package:top_grow_project/widgets/filter_text_field.dart';
 
  class FilterScreen extends StatefulWidget {
    static String  id = 'filter_screen';
@@ -16,6 +17,8 @@ import 'package:top_grow_project/widgets/filter.dart';
        body:Column(
          children: [
            Filter(),
+           SizedBox(height: 20),
+           FilterTextField(),
          ],
        )
      );

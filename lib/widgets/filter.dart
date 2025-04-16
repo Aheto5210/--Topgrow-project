@@ -39,7 +39,7 @@ class Filter extends StatelessWidget {
               ],
               ),
               SizedBox(height: 10),
-            ]),
+            ])
       ),
     );
   }
