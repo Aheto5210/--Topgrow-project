@@ -13,14 +13,16 @@ import 'package:top_grow_project/widgets/filter_text_field.dart';
  class _FilterScreenState extends State<FilterScreen> {
    @override
    Widget build(BuildContext context) {
-     return Scaffold(
-       body:Column(
-         children: [
-           Filter(),
-           SizedBox(height: 20),
-           FilterTextField(),
-         ],
-       )
+     return SafeArea(
+       child: Scaffold(
+         body:Column(
+           children: [
+             Filter(),
+             SizedBox(height: 20),
+             FilterTextField(),
+           ],
+         )
+       ),
      );
    }
  }
