@@ -2,27 +2,25 @@ import 'package:flutter/material.dart';
 
 class CustomAppbarSearch extends StatefulWidget {
   final String title;
+  final TextEditingController controller; // Changed from onChanged to controller
 
-  const CustomAppbarSearch({super.key, required this.title});
+  const CustomAppbarSearch({super.key, required this.title, required this.controller});
 
   @override
   State<CustomAppbarSearch> createState() => _CustomAppbarSearchState();
 }
 
 class _CustomAppbarSearchState extends State<CustomAppbarSearch> {
-  final TextEditingController _searchcontroller = TextEditingController();
-
   @override
   void dispose() {
-    _searchcontroller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
         color: Color(0xff3B8751),
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(12),
@@ -37,12 +35,12 @@ class _CustomAppbarSearchState extends State<CustomAppbarSearch> {
             children: [
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: Icon(Icons.close, color: Colors.white),
+                icon: const Icon(Icons.close, color: Colors.white),
               ),
               const Spacer(),
               Text(
                 widget.title,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Color(0xffFFFFFF),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -52,17 +50,30 @@ class _CustomAppbarSearchState extends State<CustomAppbarSearch> {
               const Spacer(flex: 2),
             ],
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           TextField(
-            controller: _searchcontroller,
+            controller: widget.controller, // Use the passed controller
+            autofocus: true,
             decoration: InputDecoration(
-              prefixIcon: Icon(
+              prefixIcon: const Icon(
                 Icons.search,
                 color: Color(0xff000000),
                 size: 30,
               ),
+              suffixIcon: widget.controller.text.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(
+                  Icons.clear,
+                  color: Color(0xff000000),
+                ),
+                onPressed: () {
+                  widget.controller.clear();
+                  FocusScope.of(context).unfocus();
+                },
+              )
+                  : null,
               hintText: 'Search for any product',
-              hintStyle: TextStyle(color: Colors.grey),
+              hintStyle: const TextStyle(color: Colors.grey),
               fillColor: Colors.white,
               filled: true,
               border: OutlineInputBorder(

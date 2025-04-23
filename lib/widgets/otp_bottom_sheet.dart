@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
-
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
-
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
-
 import '../home_bot_nav.dart';
 import '../provider/auth_provider.dart';
 
 class OtpBottomSheet extends StatefulWidget {
-  final String phoneNumber; // Phone number being verified
-  final String? fullName; // Full name for signup
-  final String? role; // Role (farmer/buyer) for navigation
-  final bool isSignup; // Indicates if this is a signup or login attempt
+  final String phoneNumber;
+  final String? fullName;
+  final String? role;
+  final bool isSignup;
 
   const OtpBottomSheet({
     super.key,
@@ -25,12 +22,12 @@ class OtpBottomSheet extends StatefulWidget {
 
   // Static method to show the bottom sheet
   static void show(
-    BuildContext context,
-    String phoneNumber, {
-    String? fullName,
-    String? role,
-    bool isSignup = false,
-  }) {
+      BuildContext context,
+      String phoneNumber, {
+        String? fullName,
+        String? role,
+        bool isSignup = false,
+      }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -39,11 +36,11 @@ class OtpBottomSheet extends StatefulWidget {
       ),
       builder:
           (context) => OtpBottomSheet(
-            phoneNumber: phoneNumber,
-            fullName: fullName,
-            role: role,
-            isSignup: isSignup,
-          ),
+        phoneNumber: phoneNumber,
+        fullName: fullName,
+        role: role,
+        isSignup: isSignup,
+      ),
     );
   }
 
@@ -140,9 +137,9 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
             CustomElevatedButton(
               text: _isLoading ? 'Verifying...' : 'Verify', // Show loading text
               onPressed:
-                  _isLoading
-                      ? null
-                      : _verifyCode, // Disable button during loading
+              _isLoading
+                  ? null
+                  : _verifyCode, // Disable button during loading
             ),
           ],
         ),

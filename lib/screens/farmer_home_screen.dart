@@ -1,12 +1,34 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../models/product.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:top_grow_project/models/product.dart';
+import 'package:top_grow_project/screens/product_details_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../widgets/custom_appbar.dart';
 
 class FarmerHomeScreen extends StatelessWidget {
   static String id = 'farmer_home_screen';
 
   const FarmerHomeScreen({super.key});
+
+  // Function to initiate phone call
+  Future<void> _callFarmer(BuildContext context, String? phoneNumber) async {
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Phone number not available')),
+      );
+      return;
+    }
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not launch phone call')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +48,11 @@ class FarmerHomeScreen extends StatelessWidget {
                   return const Center(child: Text('Error loading products'));
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator(color: Color(0xff3B8751)));
                 }
-                final products = snapshot.data!.docs.map((doc) => Product.fromFirestore(doc)).toList();
+                final products = snapshot.data!.docs
+                    .map((doc) => Product.fromFirestore(doc))
+                    .toList();
                 if (products.isEmpty) {
                   return const Center(child: Text('No products yet'));
                 }
@@ -44,97 +68,184 @@ class FarmerHomeScreen extends StatelessWidget {
                   itemCount: products.length,
                   itemBuilder: (context, index) {
                     final product = products[index];
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(10),
+                    final PageController pageController = PageController();
+                    return GestureDetector(
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        ProductDetailsScreen.id,
+                        arguments: product,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                              child: product.imageUrls.isNotEmpty
-                                  ? Image.network(
-                                product.imageUrls.first,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                const Center(child: Icon(Icons.image_not_supported, size: 50)),
-                              )
-                                  : const Center(
-                                child: Icon(Icons.image_not_supported, size: 50),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xffEAB916)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  PageView.builder(
+                                    controller: pageController,
+                                    itemCount: product.imageUrls.isNotEmpty
+                                        ? product.imageUrls.length
+                                        : 1,
+                                    itemBuilder: (context, pageIndex) {
+                                      return ClipRRect(
+                                        borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(10),
+                                        ),
+                                        child: product.imageUrls.isNotEmpty
+                                            ? Image.network(
+                                          product.imageUrls[pageIndex],
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                        )
+                                            : const Center(
+                                          child: Icon(
+                                            Icons.image_not_supported,
+                                            size: 50,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  if (product.imageUrls.length > 1)
+                                    Positioned(
+                                      bottom: 8,
+                                      left: 0,
+                                      right: 0,
+                                      child: Center(
+                                        child: SmoothPageIndicator(
+                                          controller: pageController,
+                                          count: product.imageUrls.length,
+                                          effect: const JumpingDotEffect(
+                                            dotHeight: 8,
+                                            dotWidth: 8,
+                                            activeDotColor: Color(0xff3B8751),
+                                            dotColor: Colors.grey,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        product.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          'GH₵ ${product.price.toStringAsFixed(0)}',
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Product Name
+                                      Expanded(
+                                        child: Text(
+                                          product.name,
                                           style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Color(0xff3B8751),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                      // Price and Size in a Container
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xffD9D9D9),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              'GH₵ ${product.price.toStringAsFixed(0)}',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xff3B8751),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              product.size,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () => _callFarmer(context, product.phoneNumber),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xff3B8751),
+                                            borderRadius: BorderRadius.circular(5),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                                            child: const Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.phone_in_talk_outlined,
+                                                  color: Colors.white,
+                                                  size: 14,
+                                                ),
+                                                SizedBox(width: 6),
+                                                Text(
+                                                  'Call Farmer',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                        Text(
-                                          product.size,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on,
+                                        size: 14,
+                                        color: Color(0xffDA4240),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          product.location,
                                           style: const TextStyle(
-                                            fontSize: 15,
+                                            fontSize: 12,
                                             color: Colors.grey,
                                           ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on,
-                                      size: 14,
-                                      color: Color(0xffDA4240),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        product.location,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -147,37 +258,3 @@ class FarmerHomeScreen extends StatelessWidget {
     );
   }
 }
-
-// // Product model to parse Firestore data
-// class Product {
-//   final String id;
-//   final String name;
-//   final double price;
-//   final String category;
-//   final String location;
-//   final String size;
-//   final List<String> imageUrls;
-//
-//   Product({
-//     required this.id,
-//     required this.name,
-//     required this.price,
-//     required this.category,
-//     required this.location,
-//     required this.size,
-//     required this.imageUrls,
-//   });
-//
-//   factory Product.fromFirestore(DocumentSnapshot doc) {
-//     final data = doc.data() as Map<String, dynamic>;
-//     return Product(
-//       id: doc.id,
-//       name: data['name'] ?? '',
-//       price: (data['price'] as num?)?.toDouble() ?? 0.0,
-//       category: data['category'] ?? '',
-//       location: data['location'] ?? '',
-//       size: data['size'] ?? '',
-//       imageUrls: List<String>.from(data['imageUrls'] ?? []),
-//     );
-//   }
-

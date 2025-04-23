@@ -1,22 +1,12 @@
-// Core Flutter package for building the UI with widgets like Scaffold, Column, and Text.
 import 'package:flutter/material.dart';
-// Provider for managing authentication state across the app.
 import 'package:provider/provider.dart';
-// App-wide constants like colors (e.g., iykBackgroundColor).
 import 'package:top_grow_project/constants.dart';
-// Reusable button widget for consistent styling.
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
-// Reusable text field widget for name and phone input.
 import 'package:top_grow_project/widgets/custom_textfield.dart';
-// Bottom sheet for OTP verification during signup.
 import 'package:top_grow_project/widgets/otp_bottom_sheet.dart';
-// Bottom navigation home screen for farmers.
 import '../home_bot_nav.dart';
-// Auth provider for handling phone number signup logic.
 import '../provider/auth_provider.dart';
-// Buyer home screen for navigation if role changes.
 import 'buyer_home_screen.dart';
-// Farmer sign-in screen for navigation if user has an account.
 import 'farmer_login_screen.dart';
 
 class FarmerSignupScreen extends StatefulWidget {
@@ -60,9 +50,7 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.signUpWithPhoneNumber(phoneNumber, context, (
-          verificationId,
-          ) {
+      await authProvider.signUpWithPhoneNumber(phoneNumber, context, (verificationId) {
         // Show OTP bottom sheet after verification ID is received
         OtpBottomSheet.show(
           context,
@@ -71,18 +59,18 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
           role: role,
           isSignup: true,
         );
+        // Stop loader when OTP bottom sheet is shown
+        setState(() => _isLoading = false);
       });
     } catch (e) {
-      // Log error for debugging; show user-friendly message
       print('Error in _startSignup: $e');
+      setState(() => _isLoading = false); // Stop loader on error
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           backgroundColor: Colors.red,
-          content: Text('An error occurred. Please try again.'),
+          content: Text('Error: ${e.toString()}'),
         ),
       );
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:top_grow_project/constants.dart';
@@ -6,7 +5,6 @@ import 'package:top_grow_project/screens/farmer_signup_screen.dart';
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
 import 'package:top_grow_project/widgets/custom_textfield.dart';
 import 'package:top_grow_project/widgets/otp_bottom_sheet.dart';
-//
 import '../home_bot_nav.dart';
 import 'buyer_home_screen.dart';
 import '../provider/auth_provider.dart';
@@ -49,9 +47,7 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.signInWithPhoneNumber(phoneNumber, context, (
-          verificationId,
-          ) {
+      await authProvider.signInWithPhoneNumber(phoneNumber, context, (verificationId) {
         // Show OTP bottom sheet after verification ID is received
         OtpBottomSheet.show(
           context,
@@ -59,11 +55,18 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
           role: role,
           isSignup: false,
         );
+        // Stop loader when OTP bottom sheet is shown
+        setState(() => _isLoading = false);
       });
     } catch (e) {
       print('Error in _startLogin: $e');
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() => _isLoading = false); // Stop loader on error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Error: ${e.toString()}'),
+        ),
+      );
     }
   }
 
@@ -94,14 +97,12 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Padding(
-                // Responsive padding: 5% of screen width, capped for balance
                 padding: EdgeInsets.symmetric(
                   horizontal: (screenWidth * 0.05).clamp(16, 32),
                   vertical: (screenHeight * 0.05).clamp(20, 40),
                 ),
                 child: ConstrainedBox(
-                  // Max width for large screens to keep content compact
-                  constraints: BoxConstraints(maxWidth: 600),
+                  constraints: const BoxConstraints(maxWidth: 600),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -109,7 +110,6 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
                         child: Hero(
                           tag: 'logo',
                           child: SizedBox(
-
                             height: (screenHeight * 0.25).clamp(120, 200),
                             width: (screenWidth * 0.5).clamp(150, 300),
                             child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
@@ -137,7 +137,7 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
                           ],
                         ),
                       ),
-                      SizedBox(height: (screenHeight * 0.02).clamp(8, 16)), // Responsive spacer
+                      SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
                       Text(
                         'Login as a Farmer',
                         style: TextStyle(

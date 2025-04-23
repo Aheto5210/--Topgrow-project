@@ -18,3 +18,17 @@ final  iykBackgroundColor = Colors.green.shade50;
      'Half Dozen', 'Dozen', 'Per kg', 'Small', 'Medium', 'Large'
    ];
  }
+
+
+
+ // App-wide constants for consistent theming
+ const Color primaryGreen = Color(0xff3B8751); // Primary green for buttons and accents
+ const double borderRadius = 12.0; // Standard border radius for UI elements
+
+
+
+ class SearchConstants {
+   static const Color primaryGreen = Color(0xff3B8751);
+   static const double borderRadius = 12.0;
+   static const double standardPadding = 16.0;
+ }

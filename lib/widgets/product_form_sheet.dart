@@ -30,6 +30,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   final GlobalKey _locationKey = GlobalKey();
   final GlobalKey _sizeKey = GlobalKey();
   final ProductService _productService = ProductService();
+  bool _isUploading = false; // Track upload state
 
   @override
   void initState() {
@@ -42,7 +43,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       _locationController.text = widget.product!.location;
       _category = widget.product!.category;
       _size = widget.product!.size;
-      _imageUrls = widget.product!.imageUrls;
+      _imageUrls = List.from(widget.product!.imageUrls); // Defensive copy
     }
   }
 
@@ -356,37 +357,60 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                 ),
                 const SizedBox(height: 20),
                 OutlinedButton.icon(
-                  onPressed: () async {
-                    final picker = ImagePicker();
-                    final pickedFiles = await picker.pickMultiImage();
-                    if (pickedFiles.isNotEmpty) {
-                      try {
-                        final uploadedUrls = await _productService.uploadImages(pickedFiles);
-                        if (uploadedUrls.isNotEmpty && mounted) {
-                          setState(() {
-                            _imageUrls.addAll(uploadedUrls);
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Images uploaded successfully!'),
-                              backgroundColor: Color(0xff3B8751),
-                            ),
-                          );
-                        }
-                      } catch (e) {
+                  onPressed: _isUploading
+                      ? null // Disable button while uploading
+                      : () async {
+                    setState(() {
+                      _isUploading = true; // Start loader
+                    });
+                    try {
+                      final picker = ImagePicker();
+                      final pickedFiles = await picker.pickMultiImage();
+                      if (pickedFiles.isEmpty) {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to upload images: $e'),
-                              backgroundColor: Colors.redAccent,
-                            ),
-                          );
+                          setState(() {
+                            _isUploading = false; // Stop loader if no images picked
+                          });
                         }
+                        return;
+                      }
+                      final uploadedUrls = await _productService.uploadImages(pickedFiles);
+                      if (mounted) {
+                        setState(() {
+                          if (uploadedUrls.isNotEmpty) {
+                            _imageUrls.addAll(uploadedUrls);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Images uploaded successfully!'),
+                                backgroundColor: Color(0xff3B8751),
+                              ),
+                            );
+                          }
+                          _isUploading = false; // Stop loader
+                        });
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        setState(() {
+                          _isUploading = false; // Stop loader on error
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to upload images: $e'),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
                       }
                     }
                   },
-                  icon: const Icon(Icons.cloud_upload),
-                  label: const Text('Upload Images'),
+                  icon: _isUploading
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : const Icon(Icons.cloud_upload),
+                  label: Text(_isUploading ? 'Uploading...' : 'Upload Images'),
                   style: OutlinedButton.styleFrom(
                     minimumSize: Size(double.infinity, screenSize.height * 0.06),
                     side: BorderSide(color: Colors.grey.shade400),
@@ -415,7 +439,8 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                                    errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.error),
                                   ),
                                 ),
                                 Positioned(

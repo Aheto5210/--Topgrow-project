@@ -16,25 +16,14 @@ class AuthProvider with ChangeNotifier {
   String? get verificationId => _verificationId;
 
   AuthProvider() {
-    // On initialization, sign out to clear any persisted session
-    _signOutOnInit();
-  }
-
-  // Sign out on initialization to prevent auto sign-in
-  Future<void> _signOutOnInit() async {
-    try {
-      await _auth.signOut();
-      _user = null;
-      _fullName = null;
-      _role = null;
-      _verificationId = null;
-      notifyListeners();
-    } catch (e) {
-      print('Error signing out on init: $e');
+    // Check current user instead of signing out
+    _user = _auth.currentUser;
+    if (_user != null) {
+      _fetchUserData(_user!.uid);
     }
   }
 
-  // Fetch user data from Firestore after manual sign-in
+  // Fetch user data from Firestore
   Future<void> _fetchUserData(String uid) async {
     try {
       DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
@@ -43,21 +32,11 @@ class AuthProvider with ChangeNotifier {
         _role = doc['role'] as String?;
         notifyListeners();
       } else {
-        // If the document doesn't exist, sign the user out to prevent inconsistent state
-        await _auth.signOut();
-        _user = null;
-        _fullName = null;
-        _role = null;
-        notifyListeners();
+        await _signOut(); // Clear state if user doc doesn't exist
       }
     } catch (e) {
-      print('Error fetching user data: $e');
-      // Sign the user out to prevent inconsistent state
-      await _auth.signOut();
-      _user = null;
-      _fullName = null;
-      _role = null;
-      notifyListeners();
+      await _signOut(); // Clear state on error
+      debugPrint('Error fetching user data: $e');
     }
   }
 
@@ -103,153 +82,124 @@ class AuthProvider with ChangeNotifier {
           .get();
       return query.docs.isNotEmpty;
     } catch (e) {
-      print('Error checking phone number: $e');
+      debugPrint('Error checking phone number: $e');
       return false;
     }
   }
 
-  // Sign in with phone number (for login)
-  Future<void> signInWithPhoneNumber(
-      String phoneNumber,
-      BuildContext context,
-      Function(String) onCodeSent,
-      ) async {
+  // Start phone verification (for sign-in/signup and resend OTP)
+  Future<void> startPhoneVerification(String phoneNumber, BuildContext context) async {
     try {
       String? phoneError = validatePhoneNumber(phoneNumber);
       if (phoneError != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.red, content: Text(phoneError)),
+          SnackBar(backgroundColor: Colors.redAccent, content: Text(phoneError)),
         );
         return;
       }
 
+      await _auth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          UserCredential userCredential = await _auth.signInWithCredential(credential);
+          _user = userCredential.user;
+          if (_user != null) {
+            await _fetchUserData(_user!.uid);
+          }
+          notifyListeners();
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          String errorMessage = 'Verification failed. Please try again.';
+          if (e.code == 'invalid-phone-number') {
+            errorMessage = 'Invalid phone number format.';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.redAccent,
+              content: Text(errorMessage),
+            ),
+          );
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          _verificationId = verificationId;
+          notifyListeners();
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text('Error starting verification: $e'),
+        ),
+      );
+    }
+  }
+
+  // Sign in with phone number
+  Future<void> signInWithPhoneNumber(String phoneNumber, BuildContext context, Function(String) onCodeSent) async {
+    try {
       bool phoneExists = await checkPhoneNumberExists(phoneNumber);
       if (!phoneExists) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.redAccent,
             content: Text('Phone number not found. Please sign up first.'),
           ),
         );
         return;
       }
-
-      await _auth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          UserCredential userCredential = await _auth.signInWithCredential(credential);
-          _user = userCredential.user;
-          if (_user != null) {
-            await _fetchUserData(_user!.uid);
-          }
-          notifyListeners();
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.red,
-              content: Text('Verification failed: ${e.message}'),
-            ),
-          );
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          _verificationId = verificationId;
-          onCodeSent(verificationId);
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
-        },
-      );
+      await startPhoneVerification(phoneNumber, context);
+      onCodeSent(_verificationId ?? '');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text('Error: $e')),
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text('Error: $e'),
+        ),
       );
     }
   }
 
-  // Sign up with phone number (for signup)
-  Future<void> signUpWithPhoneNumber(
-      String phoneNumber,
-      BuildContext context,
-      Function(String) onCodeSent,
-      ) async {
+  // Sign up with phone number
+  Future<void> signUpWithPhoneNumber(String phoneNumber, BuildContext context, Function(String) onCodeSent) async {
     try {
-      String? phoneError = validatePhoneNumber(phoneNumber);
-      if (phoneError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.red, content: Text(phoneError)),
-        );
-        return;
-      }
-
       bool phoneExists = await checkPhoneNumberExists(phoneNumber);
       if (phoneExists) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.redAccent,
             content: Text('Phone number already exists. Please sign in instead.'),
           ),
         );
         return;
       }
-
-      await _auth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          UserCredential userCredential = await _auth.signInWithCredential(credential);
-          _user = userCredential.user;
-          if (_user != null) {
-            await _fetchUserData(_user!.uid);
-          }
-          notifyListeners();
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.red,
-              content: Text('Verification failed: ${e.message}'),
-            ),
-          );
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          _verificationId = verificationId;
-          onCodeSent(verificationId);
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
-        },
-      );
+      await startPhoneVerification(phoneNumber, context);
+      onCodeSent(_verificationId ?? '');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text('Error: $e')),
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text('Error: $e'),
+        ),
       );
     }
   }
 
   // Verify OTP and sign in
-  Future<void> verifyOtpAndSignIn(
-      String verificationId,
-      String smsCode,
-      String fullName,
-      String role,
-      BuildContext context,
-      ) async {
+  Future<void> verifyOtpAndSignIn(String verificationId, String smsCode, String fullName, String role, BuildContext context) async {
     try {
       String? otpError = validateOtp(smsCode);
       if (otpError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.red, content: Text(otpError)),
-        );
-        return;
+        throw Exception(otpError);
       }
 
       if (fullName.isNotEmpty) {
         String? nameError = validateFullName(fullName);
         if (nameError != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(backgroundColor: Colors.red, content: Text(nameError)),
-          );
-          return;
+          throw Exception(nameError);
         }
       }
 
@@ -270,18 +220,21 @@ class AuthProvider with ChangeNotifier {
         await _fetchUserData(_user!.uid);
       }
       notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Error verifying OTP. Please try again.';
+      if (e.code == 'invalid-verification-code') {
+        errorMessage = 'Incorrect OTP. Please check the code and try again.';
+      } else if (e.code == 'session-expired') {
+        errorMessage = 'The OTP has expired. Please request a new one.';
+      }
+      throw Exception(errorMessage);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Error verifying OTP: $e'),
-        ),
-      );
+      throw Exception(e.toString());
     }
   }
 
-  // Sign out
-  Future<void> signOut() async {
+  // Sign out (internal)
+  Future<void> _signOut() async {
     try {
       await _auth.signOut();
       _user = null;
@@ -290,7 +243,16 @@ class AuthProvider with ChangeNotifier {
       _verificationId = null;
       notifyListeners();
     } catch (e) {
-      print('Error signing out: $e');
+      debugPrint('Error signing out: $e');
     }
+  }
+
+  // Public method to clear user data and notify listeners
+  void clearUserData() {
+    _user = null;
+    _fullName = null;
+    _role = null;
+    _verificationId = null;
+    notifyListeners();
   }
 }

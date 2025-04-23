@@ -1,11 +1,7 @@
-//
 import 'package:flutter/material.dart';
-//
 import 'package:provider/provider.dart';
-
 import 'package:top_grow_project/constants.dart';
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
-
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
 import 'package:top_grow_project/widgets/custom_textfield.dart';
 import 'package:top_grow_project/widgets/otp_bottom_sheet.dart';
@@ -53,31 +49,26 @@ class _BuyerSignupScreenState extends State<BuyerSignupScreen> {
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.signUpWithPhoneNumber(
-        phoneNumber,
-        context,
-            (verificationId) {
-          // Show OTP bottom sheet after verification ID is received
-          OtpBottomSheet.show(
-            context,
-            phoneNumber,
-            fullName: fullName,
-            role: role,
-            isSignup: true,
-          );
-        },
-      );
+      await authProvider.signUpWithPhoneNumber(phoneNumber, context, (verificationId) {
+        // Show OTP bottom sheet after verification ID is received
+        OtpBottomSheet.show(
+          context,
+          phoneNumber,
+          fullName: fullName,
+          role: role,
+          isSignup: true,
+        );
+        // Stop loader when OTP bottom sheet is shown
+        setState(() => _isLoading = false);
+      });
     } catch (e) {
-      // Log error for debugging; show user-friendly message if needed
-      print('Error in _startSignup: $e');
+      setState(() => _isLoading = false); // Stop loader on error
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           backgroundColor: Colors.red,
-          content: Text('An error occurred. Please try again.'),
+          content: Text('Error: ${e.toString()}'),
         ),
       );
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -104,20 +95,17 @@ class _BuyerSignupScreenState extends State<BuyerSignupScreen> {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Padding(
-                // Responsive padding: 5% of screen width/height, capped
                 padding: EdgeInsets.symmetric(
                   horizontal: (screenWidth * 0.05).clamp(16, 32),
                   vertical: (screenHeight * 0.05).clamp(20, 40),
                 ),
                 child: ConstrainedBox(
-                  // Max width for large screens to keep content compact
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Center(
                         child: SizedBox(
-                          // Responsive logo: 25% of screen height, capped
                           height: (screenHeight * 0.25).clamp(120, 200),
                           width: (screenWidth * 0.5).clamp(150, 300),
                           child: Image.asset(
@@ -147,7 +135,7 @@ class _BuyerSignupScreenState extends State<BuyerSignupScreen> {
                           ],
                         ),
                       ),
-                      SizedBox(height: (screenHeight * 0.02).clamp(8, 16)), // Responsive spacer
+                      SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
                       Text(
                         'Sign up as a Buyer',
                         style: TextStyle(

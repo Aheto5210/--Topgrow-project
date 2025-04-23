@@ -1,9 +1,7 @@
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/product.dart';
-
 import '../service/product_services.dart';
 import '../widgets/product_form_sheet.dart';
 
@@ -20,20 +18,28 @@ class _ProductScreenState extends State<ProductScreen> {
   final ProductService _productService = ProductService();
   String? _deletingProductId;
 
-  //Shows the product form modal for adding or editing.
+  // Color palette for consistency
+  static const Color primaryGreen = Color(0xff3B8751);
+  static const Color accentYellow = Color(0xffEAB916);
+  static const Color errorRed = Color(0xffDA4240);
+
+  // Standard padding and border radius
+  static const double borderRadius = 12.0;
+
+  // Shows the product form modal for adding or editing
   void _showProductForm(BuildContext context, {Product? product}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
       ),
       builder: (context) => ProductFormSheet(product: product),
     );
   }
 
-  // Confirms and deletes a product.
+  // Confirms and deletes a product
   Future<void> _deleteProduct(String id, String name) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -49,7 +55,7 @@ class _ProductScreenState extends State<ProductScreen> {
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: errorRed),
             ),
           ),
         ],
@@ -66,7 +72,7 @@ class _ProductScreenState extends State<ProductScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Product "$name" deleted successfully'),
-              backgroundColor: const Color(0xff3B8751),
+              backgroundColor: primaryGreen,
             ),
           );
         }
@@ -104,134 +110,205 @@ class _ProductScreenState extends State<ProductScreen> {
               stream: FirebaseFirestore.instance.collection('products').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final products = snapshot.data!.docs.map((doc) => Product.fromFirestore(doc)).toList();
-                if (products.isEmpty) {
-                  return const Center(child: Text('No products yet'));
-                }
-                return ListView.builder(
-                  padding: EdgeInsets.all(size.width * 0.04),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return Row(
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: ListTile(
-                            leading: product.imageUrls.isNotEmpty
-                                ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: CachedNetworkImage(
-                                imageUrl: product.imageUrls.first,
-                                width: size.width * 0.12,
-                                height: size.width * 0.12,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const CircularProgressIndicator(),
-                                errorWidget: (context, url, error) =>
-                                    Icon(Icons.image_not_supported, size: size.width * 0.12),
-                              ),
-                            )
-                                : Icon(Icons.image_not_supported, size: size.width * 0.12),
-                            title: Text(
-                              product.name,
-                              overflow: TextOverflow.visible,
-                              softWrap: false,
-                              maxLines: 1,
-                            ),
-                            subtitle: Text(
-                              product.location,
-                              overflow: TextOverflow.visible,
-                              maxLines: 1,
-                              softWrap: false,
+                        Text(
+                          'Error: ${snapshot.error}',
+                          style: const TextStyle(fontSize: 16, color: errorRed),
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: () => setState(() {}), // Retry
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryGreen,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(borderRadius),
                             ),
                           ),
-                        ),
-
-                        InkWell(
-                          onTap: () => _showProductForm(context, product: product),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: size.width * 0.02,
-                              vertical: 8,
-                            ),
-                            margin: EdgeInsets.only(right: size.width * 0.02),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xffEAB916)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.edit,
-                                  color: const Color(0xffEAB916),
-                                  size: size.width * 0.045,
-                                ),
-                                SizedBox(width: size.width * 0.01),
-                                Text(
-                                  'Update',
-                                  style: TextStyle(
-                                    color: const Color(0xffEAB916),
-                                    fontSize: (size.width * 0.035).clamp(12, 14),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: _deletingProductId == product.id
-                              ? null
-                              : () => _deleteProduct(product.id, product.name),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: size.width * 0.03,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xffDA4240)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                _deletingProductId == product.id
-                                    ? SizedBox(
-                                  width: size.width * 0.045,
-                                  height: size.width * 0.045,
-                                  child: const CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(Color(0xffDA4240)),
-                                  ),
-                                )
-                                    : Icon(
-                                  Icons.delete,
-                                  color: const Color(0xffDA4240),
-                                  size: size.width * 0.045,
-                                ),
-                                SizedBox(width: size.width * 0.01),
-                                Text(
-                                  'Delete',
-                                  style: TextStyle(
-                                    color: const Color(0xffDA4240),
-                                    fontSize: (size.width * 0.035).clamp(12, 14),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          child: const Text(
+                            'Retry',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ],
-                    );
+                    ),
+                  );
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Color(0xff3B8751)));
+                }
+                final products = snapshot.data!.docs.map((doc) => Product.fromFirestore(doc)).toList();
+                if (products.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No products yet',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  );
+                }
+                return RefreshIndicator(
+
+                  onRefresh: () async {
+                    setState(() {}); // Trigger rebuild to refresh data
                   },
+                  color: primaryGreen,
+                  child: ListView.builder(
+                    padding: EdgeInsets.all(size.width * 0.04),
+                    itemCount: products.length,
+                    itemBuilder: (context, index) {
+                      final product = products[index];
+                      return GestureDetector(
+                        onTap: () => _showProductForm(context, product: product),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            children: [
+                              // Product image
+                              product.imageUrls.isNotEmpty
+                                  ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: CachedNetworkImage(
+                                  imageUrl: product.imageUrls.first,
+                                  width: size.width * 0.12,
+                                  height: size.width * 0.12,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const CircularProgressIndicator(
+                                    color: primaryGreen,
+                                  ),
+                                  errorWidget: (context, url, error) => Icon(
+                                    Icons.image_not_supported,
+                                    size: size.width * 0.12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              )
+                                  : Icon(
+                                Icons.image_not_supported,
+                                size: size.width * 0.12,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(width: size.width * 0.03),
+                              // Product details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.name,
+                                      style: TextStyle(
+                                        fontSize: (size.width * 0.04).clamp(14, 16),
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: 'qwerty',
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      product.location,
+                                      style: TextStyle(
+                                        fontSize: (size.width * 0.035).clamp(12, 14),
+                                        color: Colors.grey,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Update button
+                              InkWell(
+                                onTap: () => _showProductForm(context, product: product),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: size.width * 0.02,
+                                    vertical: size.width * 0.02,
+                                  ),
+                                  margin: EdgeInsets.only(right: size.width * 0.02),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: accentYellow),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.edit,
+                                        color: accentYellow,
+                                        size: size.width * 0.045,
+                                      ),
+                                      SizedBox(width: size.width * 0.01),
+                                      Text(
+                                        'Update',
+                                        style: TextStyle(
+                                          color: accentYellow,
+                                          fontSize: (size.width * 0.035).clamp(12, 14),
+                                          fontFamily: 'qwerty',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Delete button
+                              InkWell(
+                                onTap: _deletingProductId == product.id
+                                    ? null
+                                    : () => _deleteProduct(product.id, product.name),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: size.width * 0.02,
+                                    vertical: size.width * 0.02,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: errorRed),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      _deletingProductId == product.id
+                                          ? SizedBox(
+                                        width: size.width * 0.045,
+                                        height: size.width * 0.045,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation(errorRed),
+                                        ),
+                                      )
+                                          : Icon(
+                                        Icons.delete,
+                                        color: errorRed,
+                                        size: size.width * 0.045,
+                                      ),
+                                      SizedBox(width: size.width * 0.01),
+                                      Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: errorRed,
+                                          fontSize: (size.width * 0.035).clamp(12, 14),
+                                          fontFamily: 'qwerty',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              ),
+
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
           ),
+
         ],
       ),
     );
@@ -239,15 +316,15 @@ class _ProductScreenState extends State<ProductScreen> {
 
   Widget _buildHeader(BuildContext context, Size size) {
     return Container(
-      height: size.height * 0.15,
-      color: const Color(0xff3B8751),
-      child: const Center(
+      height: size.height * 0.12, // Responsive height
+      color: primaryGreen,
+      child: Center(
         child: Text(
           'Products/Items',
           style: TextStyle(
             fontFamily: 'qwerty',
             fontWeight: FontWeight.w600,
-            fontSize: 20,
+            fontSize: (size.width * 0.05).clamp(18, 20),
             color: Colors.white,
           ),
         ),
@@ -257,27 +334,28 @@ class _ProductScreenState extends State<ProductScreen> {
 
   Widget _buildCreateButton(BuildContext context, Size size) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: size.width * 0.03),
+      padding: EdgeInsets.symmetric(horizontal: size.width * 0.04),
       child: InkWell(
         onTap: () => _showProductForm(context),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(borderRadius),
         child: Container(
           height: size.height * 0.06,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
-            color: const Color(0xffEAB916),
+            borderRadius: BorderRadius.circular(borderRadius),
+            color: accentYellow,
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_circle_outline, color: Colors.white),
-              SizedBox(width: 10),
+              const Icon(Icons.add_circle_outline, color: Colors.white),
+              SizedBox(width: size.width * 0.02),
               Text(
                 'Create A New Product',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
-                  fontSize: 18,
+                  fontSize: (size.width * 0.045).clamp(16, 18),
+                  fontFamily: 'qwerty',
                 ),
               ),
             ],
