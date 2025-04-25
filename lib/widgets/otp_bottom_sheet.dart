@@ -75,7 +75,6 @@ class _OtpBottomSheetState extends State<OtpBottomSheet> {
         context,
         role == 'farmer' ? HomeBotnav.id : BuyerHomeScreen.id,
       );
-    } catch (e) {
     } finally {
       setState(() => _isLoading = false); // Reset loading state
     }

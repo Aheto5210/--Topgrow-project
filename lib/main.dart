@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart'; // Add Provider
+import 'package:provider/provider.dart';
 import 'package:top_grow_project/provider/auth_provider.dart';
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
 import 'package:top_grow_project/screens/farmer_home_screen.dart';

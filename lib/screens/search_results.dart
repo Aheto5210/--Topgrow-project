@@ -112,7 +112,9 @@ class SearchResults extends StatelessWidget {
             .toList();
 
         final filteredProducts = products.where((product) {
-          return product.name.toLowerCase().contains(searchQuery.toLowerCase());
+          return product.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              product.location.toLowerCase().contains(searchQuery.toLowerCase()) ||
+               product.price.toString().contains(searchQuery.toLowerCase());
         }).toList();
 
         return filteredProducts.isEmpty
