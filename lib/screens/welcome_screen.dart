@@ -50,7 +50,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                 child: Align(
                   alignment: Alignment.topRight,
                   child: SizedBox(
-                    height: (screenHeight * 0.15).clamp(80, 150),
                     width: (screenWidth * 0.4).clamp(100, 200),
                     child: Image.asset(
                       'assets/images/Timg.png',

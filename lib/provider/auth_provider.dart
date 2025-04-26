@@ -1,79 +1,76 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
+// Custom exception for authentication-related errors
+class AuthException implements Exception {
+  final String message;
+
+  AuthException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+// Manages authentication state and user data using Firebase
 class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   User? _user;
   String? _fullName;
   String? _role;
-  String? _verificationId; // Store verificationId for OTP verification
+  String? _verificationId;
+
+  AuthProvider() {
+    _auth.authStateChanges().listen((user) {
+      _user = user;
+      if (user != null) {
+        _fetchUserData(user.uid);
+      } else {
+        clearUserData();
+      }
+    });
+  }
 
   User? get user => _user;
   String? get fullName => _fullName;
   String? get role => _role;
-  String? get verificationId => _verificationId;
 
-  AuthProvider() {
-    // Check current user instead of signing out
-    _user = _auth.currentUser;
-    if (_user != null) {
-      _fetchUserData(_user!.uid);
-    }
-  }
-
-  // Fetch user data from Firestore
-  Future<void> _fetchUserData(String uid) async {
-    try {
-      DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists) {
-        _fullName = doc['fullName'] as String?;
-        _role = doc['role'] as String?;
-        notifyListeners();
-      } else {
-        await _signOut(); // Clear state if user doc doesn't exist
-      }
-    } catch (e) {
-      await _signOut(); // Clear state on error
-      debugPrint('Error fetching user data: $e');
-    }
-  }
-
-  // Validate full name using regex
-  String? validateFullName(String fullName) {
-    if (fullName.isEmpty) {
-      return 'Full name cannot be empty';
-    }
-    if (!RegExp(r'^[a-zA-Z\s]{2,50}$').hasMatch(fullName)) {
-      return 'Full name must contain only letters and spaces, and be 2-50 characters long';
-    }
-    return null;
-  }
-
-  // Validate phone number using regex
+  // Validates phone number format
   String? validatePhoneNumber(String phoneNumber) {
-    if (phoneNumber.isEmpty) {
-      return 'Phone number cannot be empty';
-    }
-    if (!RegExp(r'^\+\d{9,15}$').hasMatch(phoneNumber)) {
-      return 'Phone number must start with "+" followed by 9-15 digits (e.g., +233123456789)';
+    final RegExp phoneRegex = RegExp(r'^\+\d{9,15}$');
+    if (!phoneRegex.hasMatch(phoneNumber)) {
+      return 'Invalid phone number. Use format: +233123456789.';
     }
     return null;
   }
 
-  // Validate OTP using regex
+  // Validates full name format
+  String? validateFullName(String fullName) {
+    final RegExp nameRegex = RegExp(r'^[a-zA-Z\s]{2,50}$');
+    if (!nameRegex.hasMatch(fullName)) {
+      return 'Full name must be 2-50 letters/spaces.';
+    }
+    return null;
+  }
+
+  // Validates OTP format
   String? validateOtp(String otp) {
-    if (otp.isEmpty) {
-      return 'OTP cannot be empty';
-    }
-    if (!RegExp(r'^\d{6}$').hasMatch(otp)) {
-      return 'OTP must be exactly 6 digits';
+    final RegExp otpRegex = RegExp(r'^\d{6}$');
+    if (!otpRegex.hasMatch(otp)) {
+      return 'OTP must be 6 digits.';
     }
     return null;
   }
 
-  // Check if the phone number exists in Firestore
+  // Checks network connectivity
+  Future<bool> _isConnected() async {
+    var connectivityResults = await Connectivity().checkConnectivity();
+    return !connectivityResults.contains(ConnectivityResult.none);
+  }
+
+  // Checks if a phone number exists in Firestore
   Future<bool> checkPhoneNumberExists(String phoneNumber) async {
     try {
       final query = await _firestore
@@ -82,177 +79,187 @@ class AuthProvider with ChangeNotifier {
           .get();
       return query.docs.isNotEmpty;
     } catch (e) {
-      debugPrint('Error checking phone number: $e');
-      return false;
+      if (e is FirebaseException && e.code == 'unavailable') {
+        throw AuthException('No internet. Please connect and retry.');
+      }
+      throw AuthException('Failed to check phone number.');
     }
   }
 
-  // Start phone verification (for sign-in/signup and resend OTP)
-  Future<void> startPhoneVerification(String phoneNumber, BuildContext context) async {
+  // Initiates phone number verification for sign-in
+  Future<void> signInWithPhoneNumber({
+    required String phoneNumber,
+    required BuildContext context,
+    required Function(String) onCodeSent,
+  }) async {
+    if (!await _isConnected()) {
+      throw AuthException('No internet. Please connect and retry.');
+    }
+
     try {
-      String? phoneError = validatePhoneNumber(phoneNumber);
-      if (phoneError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.redAccent, content: Text(phoneError)),
-        );
-        return;
+      final phoneExists = await checkPhoneNumberExists(phoneNumber);
+      if (!phoneExists) {
+        throw AuthException('Phone number not found. Sign up instead.');
       }
 
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
-          UserCredential userCredential = await _auth.signInWithCredential(credential);
-          _user = userCredential.user;
-          if (_user != null) {
-            await _fetchUserData(_user!.uid);
-          }
-          notifyListeners();
+          await _auth.signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
-          String errorMessage = 'Verification failed. Please try again.';
           if (e.code == 'invalid-phone-number') {
-            errorMessage = 'Invalid phone number format.';
+            throw AuthException('Invalid phone number.');
+          } else if (e.code == 'too-many-requests') {
+            throw AuthException('Too many attempts. Try again later.');
+          } else if (e.code == 'network-request-failed') {
+            throw AuthException('No internet. Please connect and retry.');
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.redAccent,
-              content: Text(errorMessage),
-            ),
-          );
+          throw AuthException('Phone verification failed.');
         },
         codeSent: (String verificationId, int? resendToken) {
           _verificationId = verificationId;
-          notifyListeners();
+          onCodeSent(verificationId);
         },
         codeAutoRetrievalTimeout: (String verificationId) {
           _verificationId = verificationId;
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.redAccent,
-          content: Text('Error starting verification: $e'),
-        ),
-      );
+      rethrow;
     }
   }
 
-  // Sign in with phone number
-  Future<void> signInWithPhoneNumber(String phoneNumber, BuildContext context, Function(String) onCodeSent) async {
-    try {
-      bool phoneExists = await checkPhoneNumberExists(phoneNumber);
-      if (!phoneExists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.redAccent,
-            content: Text('Phone number not found. Please sign up first.'),
-          ),
-        );
-        return;
-      }
-      await startPhoneVerification(phoneNumber, context);
-      onCodeSent(_verificationId ?? '');
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.redAccent,
-          content: Text('Error: $e'),
-        ),
-      );
+  // Initiates phone number verification for sign-up
+  Future<void> signUpWithPhoneNumber({
+    required String phoneNumber,
+    required BuildContext context,
+    required Function(String) onCodeSent,
+  }) async {
+    if (!await _isConnected()) {
+      throw AuthException('No internet. Please connect and retry.');
     }
-  }
 
-  // Sign up with phone number
-  Future<void> signUpWithPhoneNumber(String phoneNumber, BuildContext context, Function(String) onCodeSent) async {
     try {
-      bool phoneExists = await checkPhoneNumberExists(phoneNumber);
+      final phoneExists = await checkPhoneNumberExists(phoneNumber);
       if (phoneExists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.redAccent,
-            content: Text('Phone number already exists. Please sign in instead.'),
-          ),
-        );
-        return;
+        throw AuthException('Phone number already exists. Sign in instead.');
       }
-      await startPhoneVerification(phoneNumber, context);
-      onCodeSent(_verificationId ?? '');
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.redAccent,
-          content: Text('Error: $e'),
-        ),
+
+      await _auth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await _auth.signInWithCredential(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (e.code == 'invalid-phone-number') {
+            throw AuthException('Invalid phone number.');
+          } else if (e.code == 'too-many-requests') {
+            throw AuthException('Too many attempts. Try again later.');
+          } else if (e.code == 'network-request-failed') {
+            throw AuthException('No internet. Please connect and retry.');
+          }
+          throw AuthException('Phone verification failed.');
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          _verificationId = verificationId;
+          onCodeSent(verificationId);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
       );
+    } catch (e) {
+      rethrow;
     }
   }
 
-  // Verify OTP and sign in
-  Future<void> verifyOtpAndSignIn(String verificationId, String smsCode, String fullName, String role, BuildContext context) async {
+  // Verifies OTP and signs in the user
+  Future<void> verifyOtpAndSignIn({
+    required String smsCode,
+    required String phoneNumber,
+    String? fullName,
+    required String role,
+    required bool isSignup,
+  }) async {
+    if (!await _isConnected()) {
+      throw AuthException('No internet. Please connect and retry.');
+    }
+
+    if (_verificationId == null) {
+      throw AuthException('Session expired. Start again.');
+    }
+
     try {
-      String? otpError = validateOtp(smsCode);
-      if (otpError != null) {
-        throw Exception(otpError);
-      }
-
-      if (fullName.isNotEmpty) {
-        String? nameError = validateFullName(fullName);
-        if (nameError != null) {
-          throw Exception(nameError);
-        }
-      }
-
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
         smsCode: smsCode,
       );
-      UserCredential userCredential = await _auth.signInWithCredential(credential);
-      _user = userCredential.user;
-      if (_user != null) {
-        if (fullName.isNotEmpty) {
-          await _firestore.collection('users').doc(_user!.uid).set({
-            'fullName': fullName,
-            'phoneNumber': _user!.phoneNumber,
-            'role': role,
-          }, SetOptions(merge: true));
+      await _auth.signInWithCredential(credential);
+
+      if (isSignup) {
+        if (fullName == null) {
+          throw AuthException('Full name is required.');
         }
-        await _fetchUserData(_user!.uid);
+        final fullNameError = validateFullName(fullName);
+        if (fullNameError != null) {
+          throw AuthException(fullNameError);
+        }
+
+        await _firestore.collection('users').doc(_auth.currentUser!.uid).set({
+          'fullName': fullName,
+          'phoneNumber': phoneNumber,
+          'role': role,
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       }
-      notifyListeners();
+
+      await _fetchUserData(_auth.currentUser!.uid);
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'Error verifying OTP. Please try again.';
       if (e.code == 'invalid-verification-code') {
-        errorMessage = 'Incorrect OTP. Please check the code and try again.';
+        throw AuthException('Invalid OTP. Try again.');
       } else if (e.code == 'session-expired') {
-        errorMessage = 'The OTP has expired. Please request a new one.';
+        throw AuthException('OTP expired. Request a new code.');
+      } else if (e.code == 'network-request-failed') {
+        throw AuthException('No internet. Please connect and retry.');
       }
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception(e.toString());
+      throw AuthException('Authentication failed.');
     }
   }
 
-  // Sign out (internal)
-  Future<void> _signOut() async {
+  // Fetches user data from Firestore
+  Future<void> _fetchUserData(String uid) async {
     try {
-      await _auth.signOut();
-      _user = null;
-      _fullName = null;
-      _role = null;
-      _verificationId = null;
-      notifyListeners();
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        _fullName = data['fullName'] as String?;
+        _role = data['role'] as String?;
+        notifyListeners();
+      }
     } catch (e) {
-      debugPrint('Error signing out: $e');
+      if (e is FirebaseException && e.code == 'unavailable') {
+        throw AuthException('No internet. Please connect and retry.');
+      }
+      throw AuthException('Failed to fetch user data.');
     }
   }
 
-  // Public method to clear user data and notify listeners
+  // Clears user-related data and notifies listeners
   void clearUserData() {
     _user = null;
     _fullName = null;
     _role = null;
     _verificationId = null;
     notifyListeners();
+  }
+
+  // Signs out the user
+  Future<void> signOut() async {
+    if (!await _isConnected()) {
+      throw AuthException('No internet. Please connect and retry.');
+    }
+    await _auth.signOut();
+    clearUserData();
   }
 }

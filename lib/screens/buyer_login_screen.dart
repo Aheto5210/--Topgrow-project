@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:top_grow_project/constants.dart';
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
 import 'package:top_grow_project/screens/buyer_signup_screen.dart';
@@ -8,8 +9,9 @@ import 'package:top_grow_project/widgets/custom_textfield.dart';
 import 'package:top_grow_project/widgets/otp_bottom_sheet.dart';
 import '../provider/auth_provider.dart';
 
+// Screen for buyer sign-in using phone number
 class BuyerSigninScreen extends StatefulWidget {
-  static String id = 'buyer_signin_screen'; // Unique ID for navigation.
+  static const String id = 'buyer_signin_screen';
 
   const BuyerSigninScreen({super.key});
 
@@ -18,69 +20,100 @@ class BuyerSigninScreen extends StatefulWidget {
 }
 
 class _BuyerSigninScreenState extends State<BuyerSigninScreen> {
-  final TextEditingController _phonenumberController = TextEditingController();
+  final TextEditingController _phoneNumberController = TextEditingController();
   bool _isLoading = false;
+  String? _phoneNumberError;
 
   @override
   void dispose() {
-    _phonenumberController.dispose();
+    _phoneNumberController.dispose();
     super.dispose();
   }
 
-  // Starts phone verification and shows OTP bottom sheet for sign-in.
-  Future<void> _startLogin() async {
-    final phoneNumber = _phonenumberController.text.trim();
-    final role = ModalRoute.of(context)!.settings.arguments as String? ?? 'buyer';
+  // Initiates the sign-in process with phone number
+  Future<void> _startSignIn() async {
+    if (_isLoading) return;
 
-    // Basic input validation
+    final phoneNumber = _phoneNumberController.text.trim();
+    final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'buyer';
+
     if (phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Please enter a phone number'),
-        ),
-      );
+      setState(() => _phoneNumberError = 'Enter a phone number.');
       return;
     }
 
-    setState(() => _isLoading = true);
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.signInWithPhoneNumber(phoneNumber, context, (verificationId) {
-        // Show OTP bottom sheet after verification ID is received
-        OtpBottomSheet.show(
-          context,
-          phoneNumber,
-          role: role,
-          isSignup: false,
-        );
-        // Stop loader when OTP bottom sheet is shown
-        setState(() => _isLoading = false);
-      });
-    } catch (e) {
-      setState(() => _isLoading = false); // Stop loader on error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Error: ${e.toString()}'),
-        ),
-      );
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final phoneValidationError = authProvider.validatePhoneNumber(phoneNumber);
+    if (phoneValidationError != null) {
+      setState(() => _phoneNumberError = phoneValidationError);
+      return;
     }
+
+    if ((await Connectivity().checkConnectivity()).contains(ConnectivityResult.none)) {
+      _showErrorSnackBar('No internet. Please connect and retry.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _phoneNumberError = null;
+    });
+
+    try {
+      await authProvider.signInWithPhoneNumber(
+        phoneNumber: phoneNumber,
+        context: context,
+        onCodeSent: (verificationId) {
+          setState(() {
+            _isLoading = false; // Stop loading when OTP sheet appears
+          });
+          OtpBottomSheet.show(
+            context,
+            phoneNumber: phoneNumber,
+            role: role,
+            isSignup: false,
+          );
+        },
+      );
+    } on AuthException catch (e) {
+      setState(() {
+        _isLoading = false; // Stop loading on error
+      });
+      _showErrorSnackBar(e.message);
+    } catch (e) {
+      setState(() {
+        _isLoading = false; // Stop loading on error
+      });
+      _showErrorSnackBar('Something went wrong. Please retry.');
+    }
+  }
+
+  // Shows error snackbar with the provided message
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.redAccent,
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'Retry',
+          onPressed: _startSignIn,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions and text scaling for responsiveness
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final textScaler = MediaQuery.of(context).textScaler;
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Redirect to home screen if user is already signed in
         if (authProvider.user != null && authProvider.role == 'buyer') {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!context.mounted) return;
+            if (!mounted) return;
             Navigator.pushReplacementNamed(context, BuyerHomeScreen.id);
           });
         }
@@ -101,30 +134,33 @@ class _BuyerSigninScreenState extends State<BuyerSigninScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Center(
-                        child: SizedBox(
-                          height: (screenHeight * 0.25).clamp(120, 200),
-                          width: (screenWidth * 0.5).clamp(150, 300),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            fit: BoxFit.contain,
+                        child: Hero(
+                          tag: 'logo',
+                          child: SizedBox(
+                            height: (screenHeight * 0.25).clamp(120, 200),
+                            width: (screenWidth * 0.5).clamp(150, 300),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                       ),
                       RichText(
                         text: TextSpan(
-                          text: 'Sign in to ',
+                          text: 'Sign In To ',
                           style: TextStyle(
-                            fontFamily: 'qwerty',
+                            fontFamily: 'Qwerty',
                             fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 28),
                             color: const Color.fromRGBO(59, 135, 81, 1),
                           ),
                           children: [
                             TextSpan(
-                              text: 'your Account',
+                              text: 'Your Buyer Account',
                               style: TextStyle(
-                                fontWeight: FontWeight.w400,
-                                fontFamily: 'qwerty',
+                                fontFamily: 'Qwerty',
                                 fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 28),
+                                fontWeight: FontWeight.w400,
                                 color: Colors.black,
                               ),
                             ),
@@ -133,9 +169,9 @@ class _BuyerSigninScreenState extends State<BuyerSigninScreen> {
                       ),
                       SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
                       Text(
-                        'Sign in as a Buyer',
+                        'Login as a Buyer',
                         style: TextStyle(
-                          fontFamily: 'qwerty',
+                          fontFamily: 'Qwerty',
                           fontSize: textScaler.scale(screenWidth * 0.045).clamp(14, 20),
                           fontWeight: FontWeight.w400,
                           color: const Color.fromRGBO(121, 121, 121, 1),
@@ -144,28 +180,38 @@ class _BuyerSigninScreenState extends State<BuyerSigninScreen> {
                       SizedBox(height: (screenHeight * 0.04).clamp(16, 32)),
                       CustomTextfield(
                         hintText: 'Phone Number (e.g., +233123456789)',
-                        controller: _phonenumberController,
+                        controller: _phoneNumberController,
                         keyboardType: TextInputType.phone,
+                        enabled: !_isLoading,
+                        errorText: _phoneNumberError,
+                        onChanged: (value) {
+                          if (_phoneNumberError != null) {
+                            setState(() => _phoneNumberError = null);
+                          }
+                        },
                       ),
-                      SizedBox(height: (screenHeight * 0.04).clamp(16, 32)),
+                      SizedBox(height: (screenHeight * 0.03).clamp(12, 24)),
                       CustomElevatedButton(
-                        text: 'Sign in',
-                        onPressed: _isLoading ? null : _startLogin,
+                        text: _isLoading ? 'Signing In...' : 'Sign In',
+                        onPressed: _isLoading ? null : _startSignIn,
                         isLoading: _isLoading,
                       ),
+                      SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Don't have an account?",
+                            "Don't have an account? ",
                             style: TextStyle(
                               fontSize: textScaler.scale(screenWidth * 0.04).clamp(12, 18),
                               color: Colors.black54,
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
-                              final role = ModalRoute.of(context)!.settings.arguments as String? ?? 'buyer';
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                              final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'buyer';
                               Navigator.pushNamed(
                                 context,
                                 BuyerSignupScreen.id,
@@ -173,7 +219,7 @@ class _BuyerSigninScreenState extends State<BuyerSigninScreen> {
                               );
                             },
                             child: Text(
-                              'Sign up',
+                              'Sign Up',
                               style: TextStyle(
                                 fontSize: textScaler.scale(screenWidth * 0.04).clamp(12, 18),
                                 fontWeight: FontWeight.bold,

@@ -99,7 +99,10 @@ class FarmerHomeScreen extends StatelessWidget {
                                         ),
                                         child: product.imageUrls.isNotEmpty
                                             ? Image.network(
-                                          product.imageUrls[pageIndex],
+                                          product.imageUrls[pageIndex].replaceFirst(
+                                            '/upload/',
+                                            '/upload/w_300,c_fill,q_auto,f_auto,dpr_auto/',
+                                        ),
                                           width: double.infinity,
                                           fit: BoxFit.cover,
                                         )

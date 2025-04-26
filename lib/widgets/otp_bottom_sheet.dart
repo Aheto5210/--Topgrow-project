@@ -1,41 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:top_grow_project/screens/buyer_home_screen.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:top_grow_project/provider/auth_provider.dart';
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
-import '../home_bot_nav.dart';
-import '../provider/auth_provider.dart';
 
-class OtpBottomSheet extends StatefulWidget {
-  final String phoneNumber;
-  final String? fullName;
-  final String? role;
-  final bool isSignup;
-
-  const OtpBottomSheet({
-    super.key,
-    required this.phoneNumber,
-    this.fullName,
-    this.role,
-    this.isSignup = false,
-  });
-
-  // Static method to show the bottom sheet
+// Displays a bottom sheet for OTP verification
+class OtpBottomSheet {
   static void show(
-      BuildContext context,
-      String phoneNumber, {
+      BuildContext context, {
+        required String phoneNumber,
         String? fullName,
-        String? role,
-        bool isSignup = false,
+        required String role,
+        required bool isSignup,
       }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder:
-          (context) => OtpBottomSheet(
+      builder: (context) => OtpBottomSheetContent(
         phoneNumber: phoneNumber,
         fullName: fullName,
         role: role,
@@ -43,104 +28,173 @@ class OtpBottomSheet extends StatefulWidget {
       ),
     );
   }
-
-  @override
-  _OtpBottomSheetState createState() => _OtpBottomSheetState();
 }
 
-class _OtpBottomSheetState extends State<OtpBottomSheet> {
-  String smsCode = ''; // Stores the entered OTP
-  bool _isLoading = false; // Tracks loading state for UI feedback
+class OtpBottomSheetContent extends StatefulWidget {
+  final String phoneNumber;
+  final String? fullName;
+  final String role;
+  final bool isSignup;
 
-  // Verifies the OTP using AuthProvider
+  const OtpBottomSheetContent({
+    super.key,
+    required this.phoneNumber,
+    this.fullName,
+    required this.role,
+    required this.isSignup,
+  });
+
+  @override
+  State<OtpBottomSheetContent> createState() => _OtpBottomSheetContentState();
+}
+
+class _OtpBottomSheetContentState extends State<OtpBottomSheetContent> {
+  final TextEditingController _otpController = TextEditingController();
+  final FocusNode _otpFocusNode = FocusNode(); // Added FocusNode for PinCodeTextField
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    _otpFocusNode.dispose(); // Dispose of FocusNode
+    super.dispose();
+  }
+
+  // Verifies the entered OTP and signs in the user
   Future<void> _verifyCode() async {
-    setState(() => _isLoading = true); // Show loading state
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      // Use the unified verifyOtpAndSignIn method from AuthProvider
-      await authProvider.verifyOtpAndSignIn(
-        authProvider.verificationId ?? '',
-        smsCode,
-        widget.isSignup ? (widget.fullName ?? '') : '', // Full name for signup
-        widget.role ?? 'farmer', // Default to 'farmer' if role not provided
-        context,
+    if (_isLoading) return;
+
+    if ((await Connectivity().checkConnectivity()).contains(ConnectivityResult.none)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: const Text('No internet. Please connect and retry.'),
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: _verifyCode,
+          ),
+        ),
       );
+      return;
+    }
 
-      // Close bottom sheet
-      Navigator.pop(context);
+    final otp = _otpController.text.trim();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final otpError = authProvider.validateOtp(otp);
+    if (otpError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text(otpError),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
 
-      // Navigate to the appropriate home screen based on role
-      final role = widget.role ?? 'farmer';
-      Navigator.pushReplacementNamed(
-        context,
-        role == 'farmer' ? HomeBotnav.id : BuyerHomeScreen.id,
+    setState(() => _isLoading = true);
+    try {
+      await authProvider.verifyOtpAndSignIn(
+        smsCode: otp,
+        phoneNumber: widget.phoneNumber,
+        fullName: widget.fullName,
+        role: widget.role,
+        isSignup: widget.isSignup,
+      );
+      if (mounted) Navigator.pop(context);
+    } on AuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text(e.message),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text('Something went wrong. Please retry.'),
+          duration: Duration(seconds: 3),
+        ),
       );
     } finally {
-      setState(() => _isLoading = false); // Reset loading state
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final textScaler = MediaQuery.of(context).textScaler;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom; // Get keyboard height
+
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom, //
+        bottom: keyboardHeight, // Dynamically adjust padding based on keyboard height
       ),
-      child: Container(
-        padding: const EdgeInsets.all(16.0),
-        height: MediaQuery.of(context).size.height * 0.4,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Verify your Phone Number',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color.fromRGBO(59, 135, 81, 1),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: (screenWidth * 0.05).clamp(16, 32),
+            vertical: (screenWidth * 0.05).clamp(20, 40),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Enter OTP',
+                style: TextStyle(
+                  fontFamily: 'Qwerty',
+                  fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 28),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Please enter the 6-digit code we sent to your number',
-              style: TextStyle(color: Color(0xFF797979)),
-            ),
-            const SizedBox(height: 30),
-            PinCodeTextField(
-              autoFocus: true,
-              appContext: context,
-              length: 6,
-              // 6-digit OTP
-              onChanged: (value) => setState(() => smsCode = value),
-              // Update smsCode as user types
-              onCompleted: (_) => _verifyCode(),
-              // Auto-verify when complete
-              keyboardType: TextInputType.number,
-              pinTheme: PinTheme(
-                shape: PinCodeFieldShape.box,
-                inactiveColor: Colors.grey,
-                selectedColor: const Color.fromRGBO(59, 135, 81, 1),
-                borderRadius: BorderRadius.circular(5),
-                fieldHeight: 50,
-                fieldWidth: 40,
-                activeFillColor: Colors.white,
-                inactiveFillColor: Colors.grey[200],
-                selectedFillColor: Colors.white,
+              SizedBox(height: (screenWidth * 0.02).clamp(8, 16)),
+              Text(
+                'We have sent a 6-digit code to ${widget.phoneNumber}',
+                style: TextStyle(
+                  fontFamily: 'Qwerty',
+                  fontSize: textScaler.scale(screenWidth * 0.04).clamp(14, 18),
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
               ),
-              enableActiveFill: true,
-              animationDuration: Duration.zero,
-              textStyle: const TextStyle(fontSize: 20),
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            ),
-            const SizedBox(height: 20),
-            CustomElevatedButton(
-              text: _isLoading ? 'Verifying...' : 'Verify', // Show loading text
-              onPressed:
-              _isLoading
-                  ? null
-                  : _verifyCode, // Disable button during loading
-            ),
-          ],
+              SizedBox(height: (screenWidth * 0.04).clamp(16, 32)),
+              PinCodeTextField(
+                appContext: context,
+                length: 6,
+                controller: _otpController,
+                keyboardType: TextInputType.number,
+                enabled: !_isLoading,
+                focusNode: _otpFocusNode, // Assign FocusNode to PinCodeTextField
+                pinTheme: PinTheme(
+                  shape: PinCodeFieldShape.box,
+                  borderRadius: BorderRadius.circular(10),
+                  fieldHeight: (screenWidth * 0.12).clamp(40, 50),
+                  fieldWidth: (screenWidth * 0.12).clamp(40, 50),
+                  activeFillColor: const Color.fromRGBO(247, 247, 247, 1),
+                  inactiveFillColor: const Color.fromRGBO(247, 247, 247, 1),
+                  selectedFillColor: const Color.fromRGBO(247, 247, 247, 1),
+                  activeColor: const Color.fromRGBO(59, 135, 81, 1),
+                  inactiveColor: Colors.grey,
+                  selectedColor: const Color.fromRGBO(59, 135, 81, 1),
+                ),
+                animationType: AnimationType.fade,
+                animationDuration: const Duration(milliseconds: 300),
+                enableActiveFill: true,
+                onCompleted: (value) => _verifyCode(),
+              ),
+              SizedBox(height: (screenWidth * 0.04).clamp(16, 32)),
+              CustomElevatedButton(
+                text: _isLoading ? 'Verifying...' : 'Verify',
+                onPressed: _isLoading ? null : _verifyCode,
+                isLoading: _isLoading,
+              ),
+            ],
+          ),
         ),
       ),
     );

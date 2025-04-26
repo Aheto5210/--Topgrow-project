@@ -284,14 +284,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                         size: size.width * 0.045,
                                       ),
                                       SizedBox(width: size.width * 0.01),
-                                      Text(
-                                        'Delete',
-                                        style: TextStyle(
-                                          color: errorRed,
-                                          fontSize: (size.width * 0.035).clamp(12, 14),
-                                          fontFamily: 'qwerty',
-                                        ),
-                                      ),
+
                                     ],
                                   ),
                                 ),

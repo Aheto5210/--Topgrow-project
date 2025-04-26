@@ -30,12 +30,12 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   final GlobalKey _locationKey = GlobalKey();
   final GlobalKey _sizeKey = GlobalKey();
   final ProductService _productService = ProductService();
-  bool _isUploading = false; // Track upload state
+  bool _isUploading = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchRegions();
+    _fetchLocations();
     _locationController.addListener(_updateLocationDropdown);
     if (widget.product != null) {
       _productNameController.text = widget.product!.name;
@@ -43,7 +43,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       _locationController.text = widget.product!.location;
       _category = widget.product!.category;
       _size = widget.product!.size;
-      _imageUrls = List.from(widget.product!.imageUrls); // Defensive copy
+      _imageUrls = List.from(widget.product!.imageUrls);
     }
   }
 
@@ -59,23 +59,30 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     super.dispose();
   }
 
-  Future<void> _fetchRegions() async {
+  Future<void> _fetchLocations() async {
     try {
       final regions = await _productService.fetchRegions();
+      // Extract districts from regionsData
+      final districts = regionsData
+          .expand((region) => (region['districts'] as List)
+          .map((district) => district['label'].toString()))
+          .toList();
+      // Combine regions and districts, sort alphabetically
+      final allLocations = [...regions, ...districts]..sort();
       if (mounted) {
         setState(() {
-          _locations = regions;
+          _locations = allLocations;
         });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load regions: $e'),
+            content: Text('Failed to load locations: $e'),
             backgroundColor: Colors.redAccent,
             action: SnackBarAction(
               label: 'Retry',
-              onPressed: _fetchRegions,
+              onPressed: _fetchLocations,
             ),
           ),
         );
@@ -358,10 +365,10 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                 const SizedBox(height: 20),
                 OutlinedButton.icon(
                   onPressed: _isUploading
-                      ? null // Disable button while uploading
+                      ? null
                       : () async {
                     setState(() {
-                      _isUploading = true; // Start loader
+                      _isUploading = true;
                     });
                     try {
                       final picker = ImagePicker();
@@ -369,7 +376,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                       if (pickedFiles.isEmpty) {
                         if (mounted) {
                           setState(() {
-                            _isUploading = false; // Stop loader if no images picked
+                            _isUploading = false;
                           });
                         }
                         return;
@@ -386,13 +393,13 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                               ),
                             );
                           }
-                          _isUploading = false; // Stop loader
+                          _isUploading = false;
                         });
                       }
                     } catch (e) {
                       if (mounted) {
                         setState(() {
-                          _isUploading = false; // Stop loader on error
+                          _isUploading = false;
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

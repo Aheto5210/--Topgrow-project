@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:top_grow_project/constants.dart';
+import 'package:top_grow_project/screens/buyer_home_screen.dart';
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
 import 'package:top_grow_project/widgets/custom_textfield.dart';
 import 'package:top_grow_project/widgets/otp_bottom_sheet.dart';
 import '../home_bot_nav.dart';
 import '../provider/auth_provider.dart';
-import 'buyer_home_screen.dart';
 import 'farmer_login_screen.dart';
 
+// Screen for farmer sign-up with full name and phone number
 class FarmerSignupScreen extends StatefulWidget {
-  static String id = 'farmer_signup_screen'; // Unique ID for navigation.
+  static const String id = 'farmer_signup_screen';
 
   const FarmerSignupScreen({super.key});
 
@@ -19,75 +21,112 @@ class FarmerSignupScreen extends StatefulWidget {
 }
 
 class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
-  final TextEditingController _fullnameController = TextEditingController();
-  final TextEditingController _phonenumberController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _phoneNumberController = TextEditingController();
   bool _isLoading = false;
+  String? _fullNameError;
+  String? _phoneNumberError;
 
   @override
   void dispose() {
-    _fullnameController.dispose();
-    _phonenumberController.dispose();
+    _fullNameController.dispose();
+    _phoneNumberController.dispose();
     super.dispose();
   }
 
-  // Starts phone verification and shows OTP bottom sheet for signup.
-  Future<void> _startSignup() async {
-    final fullName = _fullnameController.text.trim();
-    final phoneNumber = _phonenumberController.text.trim();
-    final role = ModalRoute.of(context)!.settings.arguments as String? ?? 'farmer';
+  // Initiates the sign-up process with phone number and full name
+  Future<void> _startSignUp() async {
+    if (_isLoading) return;
 
-    // Basic input validation
-    if (fullName.isEmpty || phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Please enter both full name and phone number'),
-        ),
-      );
+    final fullName = _fullNameController.text.trim();
+    final phoneNumber = _phoneNumberController.text.trim();
+    final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'farmer';
+
+    setState(() {
+      _fullNameError = fullName.isEmpty ? 'Enter your full name.' : null;
+      _phoneNumberError = phoneNumber.isEmpty ? 'Enter a phone number.' : null;
+    });
+
+    if (_fullNameError != null || _phoneNumberError != null) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final fullNameError = authProvider.validateFullName(fullName);
+    final phoneError = authProvider.validatePhoneNumber(phoneNumber);
+    setState(() {
+      _fullNameError = fullNameError;
+      _phoneNumberError = phoneError;
+    });
+
+    if (_fullNameError != null || _phoneNumberError != null) return;
+
+    if ((await Connectivity().checkConnectivity()).contains(ConnectivityResult.none)) {
+      _showErrorSnackBar('No internet. Please connect and retry.');
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _fullNameError = null;
+      _phoneNumberError = null;
+    });
+
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.signUpWithPhoneNumber(phoneNumber, context, (verificationId) {
-        // Show OTP bottom sheet after verification ID is received
-        OtpBottomSheet.show(
-          context,
-          phoneNumber,
-          fullName: fullName,
-          role: role,
-          isSignup: true,
-        );
-        // Stop loader when OTP bottom sheet is shown
-        setState(() => _isLoading = false);
-      });
-    } catch (e) {
-      print('Error in _startSignup: $e');
-      setState(() => _isLoading = false); // Stop loader on error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Error: ${e.toString()}'),
-        ),
+      await authProvider.signUpWithPhoneNumber(
+        phoneNumber: phoneNumber,
+        context: context,
+        onCodeSent: (verificationId) {
+          setState(() {
+            _isLoading = false; // Stop loading when OTP sheet appears
+          });
+          OtpBottomSheet.show(
+            context,
+            phoneNumber: phoneNumber,
+            fullName: fullName,
+            role: role,
+            isSignup: true,
+          );
+        },
       );
+    } on AuthException catch (e) {
+      setState(() {
+        _isLoading = false; // Stop loading on error
+      });
+      _showErrorSnackBar(e.message);
+    } catch (e) {
+      setState(() {
+        _isLoading = false; // Stop loading on error
+      });
+      _showErrorSnackBar('Something went wrong. Please retry.');
     }
+  }
+
+  // Shows error snackbar with the provided message
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.redAccent,
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'Retry',
+          onPressed: _startSignUp,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions and text scaling for responsiveness
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final textScaler = MediaQuery.of(context).textScaler;
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Redirect to dashboard if user is already signed in
-        if (authProvider.user != null && authProvider.role == 'farmer') {
+        if (authProvider.user != null && authProvider.role != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!context.mounted) return;
-            final role = ModalRoute.of(context)!.settings.arguments as String? ?? 'farmer';
+            if (!mounted) return;
+            final role = authProvider.role!;
             Navigator.pushReplacementNamed(
               context,
               role == 'farmer' ? HomeBotnav.id : BuyerHomeScreen.id,
@@ -101,13 +140,11 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Padding(
-                // Responsive padding: 5% of screen width/height, capped
                 padding: EdgeInsets.symmetric(
                   horizontal: (screenWidth * 0.05).clamp(16, 32),
                   vertical: (screenHeight * 0.05).clamp(20, 40),
                 ),
                 child: ConstrainedBox(
-                  // Max width for large screens to keep content compact
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -116,7 +153,6 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
                         child: Hero(
                           tag: 'logo',
                           child: SizedBox(
-                            // Responsive logo: 25% of screen height, capped
                             height: (screenHeight * 0.25).clamp(120, 200),
                             width: (screenWidth * 0.5).clamp(150, 300),
                             child: Image.asset(
@@ -138,20 +174,20 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
                             TextSpan(
                               text: ' Farmer Account',
                               style: TextStyle(
-                                fontWeight: FontWeight.w400,
                                 fontFamily: 'Qwerty',
                                 fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 28),
+                                fontWeight: FontWeight.w400,
                                 color: Colors.black,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(height: (screenHeight * 0.02).clamp(8, 16)), // Responsive spacer
+                      SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
                       Text(
                         'Sign Up as a Farmer',
                         style: TextStyle(
-                          fontFamily: 'qwerty',
+                          fontFamily: 'Qwerty',
                           fontSize: textScaler.scale(screenWidth * 0.045).clamp(14, 20),
                           fontWeight: FontWeight.w400,
                           color: const Color.fromRGBO(121, 121, 121, 1),
@@ -159,38 +195,56 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
                       ),
                       SizedBox(height: (screenHeight * 0.04).clamp(16, 32)),
                       CustomTextfield(
-                        hintText: 'Enter fullname',
-                        controller: _fullnameController,
-                        keyboardType: TextInputType.text,
+                        hintText: 'Full Name',
+                        controller: _fullNameController,
+                        keyboardType: TextInputType.name,
+                        enabled: !_isLoading,
+                        errorText: _fullNameError,
+                        onChanged: (value) {
+                          if (_fullNameError != null) {
+                            setState(() => _fullNameError = null);
+                          }
+                        },
                       ),
                       SizedBox(height: (screenHeight * 0.03).clamp(12, 24)),
                       CustomTextfield(
                         hintText: 'Phone Number (e.g., +233123456789)',
-                        controller: _phonenumberController,
+                        controller: _phoneNumberController,
                         keyboardType: TextInputType.phone,
+                        enabled: !_isLoading,
+                        errorText: _phoneNumberError,
+                        onChanged: (value) {
+                          if (_phoneNumberError != null) {
+                            setState(() => _phoneNumberError = null);
+                          }
+                        },
                       ),
                       SizedBox(height: (screenHeight * 0.03).clamp(12, 24)),
                       CustomElevatedButton(
-                        text: 'Create Account',
-                        onPressed: _isLoading ? null : _startSignup,
+                        text: _isLoading ? 'Creating Account...' : 'Create Account',
+                        onPressed: _isLoading ? null : _startSignUp,
                         isLoading: _isLoading,
                       ),
+                      SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Already have an account?',
+                            'Already have an account? ',
                             style: TextStyle(
                               fontSize: textScaler.scale(screenWidth * 0.04).clamp(12, 18),
                               color: Colors.black54,
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, FarmerSigninScreen.id);
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                              final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'farmer';
+                              Navigator.pushNamed(context, FarmerSigninScreen.id, arguments: role);
                             },
                             child: Text(
-                              'Sign in',
+                              'Sign In',
                               style: TextStyle(
                                 fontSize: textScaler.scale(screenWidth * 0.04).clamp(12, 18),
                                 fontWeight: FontWeight.bold,
