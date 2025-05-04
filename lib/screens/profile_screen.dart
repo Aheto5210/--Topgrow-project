@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:top_grow_project/screens/farmer_login_screen.dart';
 import 'package:top_grow_project/screens/role_selection.dart';
 import '../constants.dart';
 import '../provider/auth_provider.dart' as CustomAuthProvider;
@@ -34,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.pushNamedAndRemoveUntil(
             context,
-            FarmerSigninScreen.id,
+            RoleSelection.id,
                 (route) => false,
           );
         });
@@ -179,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     try {
       await Provider.of<CustomAuthProvider.AuthProvider>(context, listen: false).signOut();
-      Navigator.pushNamedAndRemoveUntil(context, FarmerSigninScreen.id, (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, RoleSelection.id, (route) => false);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to logout: $e'), backgroundColor: Colors.red),
