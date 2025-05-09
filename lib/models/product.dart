@@ -8,8 +8,10 @@ class Product {
   final String location;
   final String size;
   final List<String> imageUrls;
-  final String? phoneNumber; // Farmer's phone number
-  final DateTime postedDate; // Date product was posted
+  final String? phoneNumber;
+  final DateTime postedDate;
+  final List<String> interestedBuyers;
+  final String farmerId;
 
   Product({
     required this.id,
@@ -21,9 +23,10 @@ class Product {
     required this.imageUrls,
     this.phoneNumber,
     required this.postedDate,
+    this.interestedBuyers = const [],
+    required this.farmerId,
   });
 
-  // Convert Firestore document to Product
   factory Product.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Product(
@@ -36,10 +39,11 @@ class Product {
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
       phoneNumber: data['phoneNumber'],
       postedDate: (data['postedDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      interestedBuyers: List<String>.from(data['interestedBuyers'] ?? []),
+      farmerId: data['farmerId'] ?? '',
     );
   }
 
-  // Convert Product to Firestore map
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
@@ -50,6 +54,8 @@ class Product {
       'imageUrls': imageUrls,
       'phoneNumber': phoneNumber,
       'postedDate': Timestamp.fromDate(postedDate),
+      'interestedBuyers': interestedBuyers,
+      'farmerId': farmerId,
     };
   }
 }

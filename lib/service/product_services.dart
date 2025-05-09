@@ -421,6 +421,7 @@ class ProductService {
     required String location,
     required String size,
     required List<String> imageUrls,
+    required String farmerId,
     String? id,
   }) async {
     try {
@@ -432,6 +433,7 @@ class ProductService {
         'size': size,
         'imageUrls': imageUrls,
         'createdAt': FieldValue.serverTimestamp(),
+        'farmerId': farmerId,
       };
       if (id != null) {
         await FirebaseFirestore.instance.collection('products').doc(id).update(data);

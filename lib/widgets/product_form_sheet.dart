@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
@@ -493,6 +494,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                           size: _size!,
                           imageUrls: _imageUrls,
                           id: widget.product?.id,
+                          farmerId: FirebaseAuth.instance.currentUser!.uid,
                         );
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

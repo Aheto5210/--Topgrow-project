@@ -50,15 +50,8 @@ class OtpBottomSheetContent extends StatefulWidget {
 
 class _OtpBottomSheetContentState extends State<OtpBottomSheetContent> {
   final TextEditingController _otpController = TextEditingController();
-  final FocusNode _otpFocusNode = FocusNode(); // Added FocusNode for PinCodeTextField
   bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _otpController.dispose();
-    _otpFocusNode.dispose(); // Dispose of FocusNode
-    super.dispose();
-  }
 
   // Verifies the entered OTP and signs in the user
   Future<void> _verifyCode() async {
@@ -164,12 +157,12 @@ class _OtpBottomSheetContentState extends State<OtpBottomSheetContent> {
               ),
               SizedBox(height: (screenWidth * 0.04).clamp(16, 32)),
               PinCodeTextField(
+                focusNode: FocusNode(),
                 appContext: context,
                 length: 6,
                 controller: _otpController,
                 keyboardType: TextInputType.number,
                 enabled: !_isLoading,
-                focusNode: _otpFocusNode, // Assign FocusNode to PinCodeTextField
                 pinTheme: PinTheme(
                   shape: PinCodeFieldShape.box,
                   borderRadius: BorderRadius.circular(10),

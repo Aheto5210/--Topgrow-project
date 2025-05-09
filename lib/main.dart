@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:top_grow_project/buyer_bot_nav.dart';
 import 'package:top_grow_project/provider/auth_provider.dart';
+import 'package:top_grow_project/screens/buyer_filter_screen.dart';
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
+import 'package:top_grow_project/screens/buyer_interest_screen.dart';
+import 'package:top_grow_project/screens/buyer_profile_screen.dart';
+import 'package:top_grow_project/screens/buyer_search_screen.dart';
+import 'package:top_grow_project/screens/buyer_store_screen.dart';
 import 'package:top_grow_project/screens/farmer_home_screen.dart';
 import 'package:top_grow_project/screens/filter_screen.dart';
 import 'package:top_grow_project/screens/product_details_screen.dart';
@@ -33,11 +39,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // Provide AuthProvider
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
+      ChangeNotifierProvider(create: (_) => AuthProvider()),
+    // Provide AuthProvider
+    ],
+    child: MaterialApp(
+    debugShowCheckedModeBanner: false,
         initialRoute: WelcomeScreen.id,
         routes: {
           WelcomeScreen.id: (context) => WelcomeScreen(),
@@ -55,6 +61,12 @@ class MyApp extends StatelessWidget {
           SearchScreen.id: (context) => SearchScreen(),
           FilterScreen.id: (context) => FilterScreen(),
           ProductDetailsScreen.id : (context) => ProductDetailsScreen(),
+          BuyerBotNav.id : (context) => BuyerBotNav(),
+          BuyerStoreScreen.id : (context) => BuyerStoreScreen(),
+          BuyerInterestScreen.id : (context) => BuyerInterestScreen(),
+          BuyerProfileScreen.id : (context) => BuyerProfileScreen(),
+          BuyerSearchScreen.id : (context) => BuyerSearchScreen(),
+          BuyerFilterScreen.id : (context) => BuyerFilterScreen(),
         },
       ),
     );

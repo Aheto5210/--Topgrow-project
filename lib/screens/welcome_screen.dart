@@ -1,8 +1,5 @@
-// Core Flutter package for building the UI with widgets like Scaffold, Column, and Text.
 import 'package:flutter/material.dart';
-// Navigation target for the "Welcome" button, takes users to the role selection screen.
 import 'package:top_grow_project/screens/role_selection.dart';
-// Custom animation manager for handling slick slide and fade effects on this screen.
 import '../widgets/animation_manager.dart';
 
 class WelcomeScreen extends StatefulWidget {
