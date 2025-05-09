@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:top_grow_project/screens/about_topgrow_screen.dart';
+import 'package:top_grow_project/screens/contact_top_screen.dart';
 import 'package:top_grow_project/screens/role_selection.dart';
 import '../constants.dart';
 import '../provider/auth_provider.dart' as CustomAuthProvider;
@@ -339,7 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                     onTap: () {
-                      Navigator.pushNamed(context, 'about_screen');
+                      Navigator.pushNamed(context, AboutTopgrowScreen.id);
                     },
                   ),
                   Divider(height: 1, color: Colors.grey.shade200),
@@ -366,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                     onTap: () {
-                      Navigator.pushNamed(context, 'contact_screen');
+                      Navigator.pushNamed(context, ContactTopScreen.id);
                     },
                   ),
                   Divider(height: 1, color: Colors.grey.shade200),
