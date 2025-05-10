@@ -70,6 +70,7 @@ class _ProductScreenState extends State<ProductScreen> {
         await _productService.deleteProduct(id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
+
             SnackBar(
               content: Text('Product "$name" deleted successfully'),
               backgroundColor: primaryGreen,

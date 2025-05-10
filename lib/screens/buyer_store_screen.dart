@@ -46,6 +46,7 @@ class BuyerStoreScreen extends StatelessWidget {
       final isNowInterested = await interestService.toggleInterest(product.id);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          backgroundColor: Colors.green,
           content: Text(
             isNowInterested
                 ? 'Product marked as interested'
@@ -62,7 +63,6 @@ class BuyerStoreScreen extends StatelessWidget {
 
   // Function to handle refresh logic
   Future<void> _refreshProducts() async {
-    // Since StreamBuilder is listening to Firestore, this provides feedback for refresh.
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
@@ -97,7 +97,7 @@ class BuyerStoreScreen extends StatelessWidget {
 
                 return RefreshIndicator(
                   onRefresh: _refreshProducts,
-                  color: const Color(0xff3B8751), // Match app theme
+                  color: const Color(0xff3B8751),
                   child: GridView.builder(
                     padding: const EdgeInsets.all(10),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -110,6 +110,9 @@ class BuyerStoreScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final product = products[index];
                       final PageController pageController = PageController();
+                      final isInterested = FirebaseAuth.instance.currentUser != null &&
+                          product.interestedBuyers.contains(FirebaseAuth.instance.currentUser!.uid);
+
                       return GestureDetector(
                         onTap: () => Navigator.pushNamed(
                           context,
@@ -231,42 +234,47 @@ class BuyerStoreScreen extends StatelessWidget {
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        GestureDetector(
-                                          onTap: () => _callFarmer(context, product.phoneNumber),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xff3B8751),
-                                              borderRadius: BorderRadius.circular(5),
-                                            ),
-                                            child: const Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 5,
+                                        Expanded(
+                                          child: GestureDetector(
+                                            onTap: () => _callFarmer(context, product.phoneNumber),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xff3B8751),
+                                                borderRadius: BorderRadius.circular(5),
                                               ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.phone_in_talk_outlined,
-                                                    color: Colors.white,
-                                                    size: 14,
-                                                  ),
-                                                  SizedBox(width: 6),
-                                                  Text(
-                                                    'Call Farmer',
-                                                    style: TextStyle(
+                                              child: const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 5,
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.phone_in_talk_outlined,
                                                       color: Colors.white,
-                                                      fontSize: 14,
+                                                      size: 14,
                                                     ),
-                                                  ),
-                                                ],
+                                                    SizedBox(width: 6),
+                                                    Text(
+                                                      'Call Farmer',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 1),
                                         IconButton(
                                           onPressed: () => _markInterested(context, product),
-                                          icon: const Icon(Icons.favorite, color: Colors.green,),
+                                          icon: Icon(
+                                            isInterested ? Icons.favorite : Icons.favorite_border,
+                                            color: isInterested ? Colors.red : Colors.grey,
+                                          ),
                                         ),
                                       ],
                                     ),

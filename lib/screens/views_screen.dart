@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:top_grow_project/models/product.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ViewsScreen extends StatefulWidget {
   static String id = 'views_screen';
@@ -17,28 +16,30 @@ class ViewsScreen extends StatefulWidget {
 class _ViewsScreenState extends State<ViewsScreen> {
   final currentUser = FirebaseAuth.instance.currentUser;
 
-  // Function to initiate phone call to farmer
-  Future<void> _callFarmer(BuildContext context, String? phoneNumber) async {
-    if (phoneNumber == null || phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Farmer phone number not available')),
-      );
-      return;
-    }
-    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not launch phone call')),
-      );
-    }
-  }
-
-  // Function to clear all buyer interests
+  // Function to clear all buyer interests with confirmation dialog
   Future<void> _clearAllInterests(
-    List<Map<String, dynamic>> buyerInterests,
-  ) async {
+      List<Map<String, dynamic>> buyerInterests,
+      ) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Clear'),
+        content: const Text('Are you sure you want to clear all buyer interests?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     try {
       for (var interest in buyerInterests) {
         final product = interest['product'] as Product;
@@ -47,17 +48,17 @@ class _ViewsScreenState extends State<ViewsScreen> {
               .collection('products')
               .doc(product.id)
               .update({
-                'interestedBuyers': FieldValue.arrayRemove([buyerId]),
-              });
+            'interestedBuyers': FieldValue.arrayRemove([buyerId]),
+          });
         }
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('All buyer interests cleared')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error clearing interests: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error clearing interests: $e')),
+      );
     }
   }
 
@@ -98,14 +99,14 @@ class _ViewsScreenState extends State<ViewsScreen> {
                   onPressed: () async {
                     final buyerInterests = await _fetchBuyerDetails(
                       (await FirebaseFirestore.instance
-                              .collection('products')
-                              .where('farmerId', isEqualTo: currentUser?.uid)
-                              .get())
+                          .collection('products')
+                          .where('farmerId', isEqualTo: currentUser?.uid)
+                          .get())
                           .docs
                           .map((doc) => Product.fromFirestore(doc))
                           .where(
                             (product) => product.interestedBuyers.isNotEmpty,
-                          )
+                      )
                           .toList(),
                     );
                     await _clearAllInterests(buyerInterests);
@@ -126,11 +127,10 @@ class _ViewsScreenState extends State<ViewsScreen> {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance
-                      .collection('products')
-                      .where('farmerId', isEqualTo: currentUser?.uid)
-                      .snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('products')
+                  .where('farmerId', isEqualTo: currentUser?.uid)
+                  .snapshots(),
               builder: (context, productSnapshot) {
                 if (productSnapshot.connectionState ==
                     ConnectionState.waiting) {
@@ -145,11 +145,10 @@ class _ViewsScreenState extends State<ViewsScreen> {
                   return const Center(child: Text('No products found'));
                 }
 
-                final products =
-                    productSnapshot.data!.docs
-                        .map((doc) => Product.fromFirestore(doc))
-                        .where((product) => product.interestedBuyers.isNotEmpty)
-                        .toList();
+                final products = productSnapshot.data!.docs
+                    .map((doc) => Product.fromFirestore(doc))
+                    .where((product) => product.interestedBuyers.isNotEmpty)
+                    .toList();
 
                 if (products.isEmpty) {
                   return const Center(child: Text('No buyers interested yet'));
@@ -186,10 +185,6 @@ class _ViewsScreenState extends State<ViewsScreen> {
                         itemBuilder: (context, index) {
                           final interest = buyerInterests[index];
                           final product = interest['product'] as Product;
-                          final buyer =
-                              interest['buyer'] as Map<String, dynamic>;
-
-                          // Debug the postedDate value and type
 
                           // Format the postedDate using DateFormat
                           String formattedDate;
@@ -198,10 +193,8 @@ class _ViewsScreenState extends State<ViewsScreen> {
                               (product.postedDate as Timestamp).toDate(),
                             );
                           } else {
-                            // Fallback to current time
-                            formattedDate = DateFormat(
-                              'MMM d, yyyy',
-                            ).format(DateTime.now());
+                            formattedDate = DateFormat('MMM d, yyyy')
+                                .format(DateTime.now());
                           }
 
                           return Card(
@@ -216,14 +209,13 @@ class _ViewsScreenState extends State<ViewsScreen> {
                                   width: 60,
                                   height: 60,
                                   fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) =>
-                                          const Icon(Icons.image_not_supported),
+                                  errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.image_not_supported),
                                 ),
                               ),
                               title: Row(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     product.name,
@@ -241,9 +233,7 @@ class _ViewsScreenState extends State<ViewsScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(
-                                              0xff3B8751,
-                                            ), // Match app theme
+                                            color: Color(0xff3B8751),
                                           ),
                                         ),
                                         TextSpan(
@@ -263,7 +253,7 @@ class _ViewsScreenState extends State<ViewsScreen> {
                                 children: [
                                   Row(
                                     mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    MainAxisAlignment.spaceBetween,
                                     children: [
                                       Row(
                                         children: [
@@ -284,41 +274,21 @@ class _ViewsScreenState extends State<ViewsScreen> {
                                       Row(
                                         children: [
                                           const SizedBox(width: 8),
-                                          GestureDetector(
-                                            onTap:
-                                                () => _callFarmer(
-                                                  context,
-                                                  buyer['phoneNumber'],
-                                                ),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xff3B8751),
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 6,
-                                                  ),
-                                              child: const Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons
-                                                        .phone_in_talk_outlined,
-                                                    color: Colors.white,
-                                                    size: 14,
-                                                  ),
-                                                  SizedBox(width: 6),
-                                                  Text(
-                                                    'Call Farmer',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xff3B8751),
+                                              borderRadius:
+                                              BorderRadius.circular(5),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            child: Text(
+                                              'Views: ${product.interestedBuyers.length}',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
                                               ),
                                             ),
                                           ),
@@ -344,21 +314,19 @@ class _ViewsScreenState extends State<ViewsScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchBuyerDetails(
-    List<Product> products,
-  ) async {
+      List<Product> products,
+      ) async {
     final interests = <Map<String, dynamic>>[];
 
     for (var product in products) {
       for (var buyerId in product.interestedBuyers) {
-        final buyerDoc =
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(buyerId)
-                .get();
-        final buyer =
-            buyerDoc.exists
-                ? buyerDoc.data() as Map<String, dynamic>
-                : {'name': 'Unknown', 'phoneNumber': null};
+        final buyerDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(buyerId)
+            .get();
+        final buyer = buyerDoc.exists
+            ? buyerDoc.data() as Map<String, dynamic>
+            : {'name': 'Unknown', 'phoneNumber': null};
 
         interests.add({'product': product, 'buyer': buyer});
       }

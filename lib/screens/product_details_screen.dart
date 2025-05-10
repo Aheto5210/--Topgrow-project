@@ -314,31 +314,34 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     SizedBox(height: (screenHeight * 0.01).clamp(8, 12)),
                     Row(
                       children: [
-                        GestureDetector(
-                          onTap: () => _callFarmer(product.phoneNumber),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xff3B8751),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                              child: const Row(
-                                children: [
-                                  Icon(
-                                    Icons.phone_in_talk_outlined,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Call Farmer',
-                                    style: TextStyle(
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _callFarmer(product.phoneNumber),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xff3B8751),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.phone_in_talk_outlined,
                                       color: Colors.white,
-                                      fontSize: 14,
+                                      size: 14,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Call Farmer',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
