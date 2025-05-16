@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:top_grow_project/models/product.dart';
-import 'package:top_grow_project/screens/product_details_screen.dart';
+import 'package:top_grow_project/screens/buyer_product_details_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../service/interest_service.dart';
 import '../widgets/custom_appbar.dart';
@@ -116,7 +116,7 @@ class BuyerStoreScreen extends StatelessWidget {
                       return GestureDetector(
                         onTap: () => Navigator.pushNamed(
                           context,
-                          ProductDetailsScreen.id,
+                          BuyerProductDetailsScreen.id,
                           arguments: product,
                         ),
                         child: Container(

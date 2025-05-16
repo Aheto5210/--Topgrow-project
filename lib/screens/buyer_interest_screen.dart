@@ -258,7 +258,7 @@ class _BuyerInterestScreenState extends State<BuyerInterestScreen> {
                                         const TextSpan(
                                           text: 'Date Posted: ',
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 10,
                                             fontWeight: FontWeight.bold,
                                             color: Color(0xff3B8751),
                                           ),
@@ -266,7 +266,7 @@ class _BuyerInterestScreenState extends State<BuyerInterestScreen> {
                                         TextSpan(
                                           text: formattedDate,
                                           style: const TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 10,
                                             color: Colors.grey,
                                           ),
                                         ),

@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:top_grow_project/buyer_bot_nav.dart';
 import 'package:top_grow_project/provider/auth_provider.dart';
+import 'package:top_grow_project/screens/buyer_product_details_screen.dart';
 import 'package:top_grow_project/screens/about_topgrow_screen.dart';
 import 'package:top_grow_project/screens/buyer_filter_screen.dart';
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
@@ -71,6 +72,7 @@ class MyApp extends StatelessWidget {
           BuyerFilterScreen.id : (context) => BuyerFilterScreen(),
           AboutTopgrowScreen.id : (context) => AboutTopgrowScreen(),
           ContactTopScreen.id: (context) => ContactTopScreen(),
+          BuyerProductDetailsScreen.id:(context) => BuyerProductDetailsScreen(),
         },
       ),
     );

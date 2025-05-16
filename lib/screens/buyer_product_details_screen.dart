@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -7,19 +8,22 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../constants.dart';
 import '../models/product.dart';
+import '../service/interest_service.dart';
 import '../widgets/full_zoom_page.dart';
 
-class ProductDetailsScreen extends StatefulWidget {
-  static const String id = 'product_details_screen';
+class BuyerProductDetailsScreen extends StatefulWidget {
+  static const String id = 'buyer_product_details_screen';
 
-  const ProductDetailsScreen({super.key});
+  const BuyerProductDetailsScreen({super.key});
 
   @override
-  _ProductDetailsScreenState createState() => _ProductDetailsScreenState();
+  _BuyerProductDetailsScreenState createState() =>
+      _BuyerProductDetailsScreenState();
 }
 
-class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
-  final CarouselSliderController _carouselController = CarouselSliderController();
+class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
+  final CarouselSliderController _carouselController =
+  CarouselSliderController();
   int _currentIndex = 0;
 
   @override
@@ -28,16 +32,34 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     super.dispose();
   }
 
-  void _showFullScreenImage(BuildContext context, List<String> imageUrls, int initialIndex) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FullScreenImageViewer(
-          imageUrls: imageUrls,
-          initialIndex: initialIndex,
+  Future<void> _markInterested(BuildContext context, Product product) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to mark interest')),
+      );
+      return;
+    }
+
+    try {
+      final interestService = InterestService();
+      final isNowInterested = await interestService.toggleInterest(product.id);
+      setState(() {}); // Update UI to reflect new interest state
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.green,
+          content: Text(
+            isNowInterested
+                ? 'Product marked as interested'
+                : 'Product unmarked from interests',
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error marking interest: $e')));
+    }
   }
 
   Future<void> _callFarmer(String? phoneNumber) async {
@@ -55,6 +77,23 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         const SnackBar(content: Text('Could not launch phone call')),
       );
     }
+  }
+
+  void _showFullScreenImage(
+      BuildContext context,
+      List<String> imageUrls,
+      int initialIndex,
+      ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => FullScreenImageViewer(
+          imageUrls: imageUrls,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
   }
 
   @override
@@ -80,6 +119,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
     final Product product = arguments;
+    final isInterested =
+        FirebaseAuth.instance.currentUser != null &&
+            product.interestedBuyers.contains(
+              FirebaseAuth.instance.currentUser!.uid,
+            );
 
     return Scaffold(
       backgroundColor: const Color.fromRGBO(255, 255, 255, 1),
@@ -94,14 +138,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ? Stack(
                 children: [
                   GestureDetector(
-                    onTap: () => _showFullScreenImage(context, product.imageUrls, _currentIndex),
+                    onTap:
+                        () => _showFullScreenImage(
+                      context,
+                      product.imageUrls,
+                      _currentIndex,
+                    ),
                     child: CarouselSlider(
                       carouselController: _carouselController,
                       options: CarouselOptions(
                         height: (screenHeight * 0.35).clamp(250, 300),
                         viewportFraction: 1.0,
                         enableInfiniteScroll: product.imageUrls.length > 1,
-                        onPageChanged: product.imageUrls.length > 1
+                        onPageChanged:
+                        product.imageUrls.length > 1
                             ? (index, reason) {
                           setState(() {
                             _currentIndex = index;
@@ -109,7 +159,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         }
                             : null,
                       ),
-                      items: product.imageUrls.map((url) {
+                      items:
+                      product.imageUrls.map((url) {
                         return Image.network(
                           url,
                           fit: BoxFit.cover,
@@ -121,9 +172,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               color: Color(0xff3B8751),
                             );
                           },
-                          loadingBuilder: (context, child, loadingProgress) {
+                          loadingBuilder: (
+                              context,
+                              child,
+                              loadingProgress,
+                              ) {
                             if (loadingProgress == null) return child;
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
                           },
                         );
                       }).toList(),
@@ -133,7 +190,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     top: 12,
                     left: 8,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -144,7 +205,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       right: 0,
                       child: Center(
                         child: SmoothPageIndicator(
-                          controller: PageController(initialPage: _currentIndex),
+                          controller: PageController(
+                            initialPage: _currentIndex,
+                          ),
                           count: product.imageUrls.length,
                           effect: const WormEffect(
                             dotHeight: 8,
@@ -165,14 +228,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     bottom: 12,
                     right: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black38,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${_currentIndex + 1} / ${product.imageUrls.length}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -186,7 +255,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.local_offer, size: 80, color: Color(0xff3B8751)),
+                      Icon(
+                        Icons.local_offer,
+                        size: 80,
+                        color: Color(0xff3B8751),
+                      ),
                       SizedBox(height: 8),
                       Text(
                         'No images available',
@@ -213,7 +286,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         product.name,
                         style: TextStyle(
                           fontFamily: 'qwerty',
-                          fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 24),
+                          fontSize: textScaler
+                              .scale(screenWidth * 0.06)
+                              .clamp(20, 24),
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
@@ -222,7 +297,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFD9D9D9),
                         borderRadius: BorderRadius.circular(12),
@@ -231,11 +309,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         children: [
                           Text(
                             'GH₵ ${product.price.toStringAsFixed(0)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontFamily: 'qwerty',
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xff3B8751),
+                              color: Color(0xff3B8751),
                             ),
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.visible,
@@ -244,7 +322,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           const SizedBox(width: 5),
                           Text(
                             product.size,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontFamily: 'qwerty',
                               fontWeight: FontWeight.w400,
                               fontSize: 13,
@@ -281,7 +359,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               product.location,
                               style: TextStyle(
                                 fontFamily: 'qwerty',
-                                fontSize: textScaler.scale(screenWidth * 0.045).clamp(14, 18),
+                                fontSize: textScaler
+                                    .scale(screenWidth * 0.045)
+                                    .clamp(14, 18),
                                 color: Colors.black54,
                               ),
                             ),
@@ -299,7 +379,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 ),
                               ),
                               TextSpan(
-                                text: DateFormat.yMMMMd().format(product.postedDate),
+                                text: DateFormat.yMMMMd().format(
+                                  product.postedDate,
+                                ),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.normal,
                                   color: Colors.black,
@@ -312,6 +394,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ],
                     ),
                     SizedBox(height: (screenHeight * 0.01).clamp(8, 12)),
+                    IconButton(
+                      onPressed: () => _markInterested(context, product),
+                      icon: Icon(
+                        isInterested ? Icons.favorite : Icons.favorite_border,
+                        color: isInterested ? Colors.red : Colors.grey,
+                      ),
+                    ),
                     Row(
                       children: [
                         Expanded(
@@ -322,9 +411,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 color: const Color(0xff3B8751),
                                 borderRadius: BorderRadius.circular(5),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                                child: const Row(
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 10,
+                                ),
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
@@ -361,13 +453,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       'Other Products',
                       style: TextStyle(
                         fontFamily: 'qwerty',
-                        fontSize: textScaler.scale(screenWidth * 0.06).clamp(18, 22),
+                        fontSize: textScaler
+                            .scale(screenWidth * 0.06)
+                            .clamp(18, 22),
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
                       ),
                     ),
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance.collection('products').limit(6).snapshots(),
+                      stream:
+                      FirebaseFirestore.instance
+                          .collection('products')
+                          .limit(6)
+                          .snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.hasError) {
                           return const Center(
@@ -381,12 +479,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             ),
                           );
                         }
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Center(
-                            child: CircularProgressIndicator(color: Color(0xff3B8751)),
+                            child: CircularProgressIndicator(
+                              color: Color(0xff3B8751),
+                            ),
                           );
                         }
-                        final products = snapshot.data!.docs
+                        final products =
+                        snapshot.data!.docs
                             .map((doc) => Product.fromFirestore(doc))
                             .where((p) => p.id != product.id)
                             .toList();
@@ -406,28 +508,37 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         return GridView.builder(
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
-                          // padding: const EdgeInsets.all(10),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
                             childAspectRatio: 0.7,
                           ),
-                          itemCount: 2,
+                          itemCount: products.length > 2 ? 2 : products.length,
                           itemBuilder: (context, index) {
                             final otherProduct = products[index];
-                            final PageController pageController = PageController();
+                            final isOtherProductInterested =
+                                FirebaseAuth.instance.currentUser != null &&
+                                    otherProduct.interestedBuyers.contains(
+                                      FirebaseAuth.instance.currentUser!.uid,
+                                    );
+                            final PageController pageController =
+                            PageController();
                             return GestureDetector(
-                              onTap: () => Navigator.pushNamed(
+                              onTap:
+                                  () => Navigator.pushNamed(
                                 context,
-                                ProductDetailsScreen.id,
+                                BuyerProductDetailsScreen.id,
                                 arguments: otherProduct,
                               ),
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: Colors.grey[100],
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xffEAB916)),
+                                  border: Border.all(
+                                    color: const Color(0xffEAB916),
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,23 +548,48 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                         children: [
                                           PageView.builder(
                                             controller: pageController,
-                                            itemCount: otherProduct.imageUrls.isNotEmpty
-                                                ? otherProduct.imageUrls.length
+                                            itemCount:
+                                            otherProduct
+                                                .imageUrls
+                                                .isNotEmpty
+                                                ? otherProduct
+                                                .imageUrls
+                                                .length
                                                 : 1,
                                             itemBuilder: (context, pageIndex) {
                                               return ClipRRect(
-                                                borderRadius: const BorderRadius.vertical(
+                                                borderRadius:
+                                                const BorderRadius.vertical(
                                                   top: Radius.circular(10),
                                                 ),
-                                                child: otherProduct.imageUrls.isNotEmpty
+                                                child:
+                                                otherProduct
+                                                    .imageUrls
+                                                    .isNotEmpty
                                                     ? Image.network(
-                                                  otherProduct.imageUrls[pageIndex],
-                                                  width: double.infinity,
+                                                  otherProduct
+                                                      .imageUrls[pageIndex],
+                                                  width:
+                                                  double.infinity,
                                                   fit: BoxFit.cover,
+                                                  errorBuilder: (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                      ) {
+                                                    return const Center(
+                                                      child: Icon(
+                                                        Icons
+                                                            .image_not_supported,
+                                                        size: 50,
+                                                      ),
+                                                    );
+                                                  },
                                                 )
                                                     : const Center(
                                                   child: Icon(
-                                                    Icons.image_not_supported,
+                                                    Icons
+                                                        .image_not_supported,
                                                     size: 50,
                                                   ),
                                                 ),
@@ -468,11 +604,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                               child: Center(
                                                 child: SmoothPageIndicator(
                                                   controller: pageController,
-                                                  count: otherProduct.imageUrls.length,
-                                                  effect: const JumpingDotEffect(
+                                                  count:
+                                                  otherProduct
+                                                      .imageUrls
+                                                      .length,
+                                                  effect:
+                                                  const JumpingDotEffect(
                                                     dotHeight: 8,
                                                     dotWidth: 8,
-                                                    activeDotColor: Color(0xff3B8751),
+                                                    activeDotColor: Color(
+                                                      0xff3B8751,
+                                                    ),
                                                     dotColor: Colors.grey,
                                                   ),
                                                 ),
@@ -484,11 +626,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                         children: [
                                           Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                             children: [
                                               Expanded(
                                                 child: Text(
@@ -497,18 +642,23 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 16,
                                                   ),
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                  TextOverflow.ellipsis,
                                                   maxLines: 1,
                                                 ),
                                               ),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(
+                                                padding:
+                                                const EdgeInsets.symmetric(
                                                   horizontal: 8,
                                                   vertical: 4,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xffD9D9D9),
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  color: const Color(
+                                                    0xffD9D9D9,
+                                                  ),
+                                                  borderRadius:
+                                                  BorderRadius.circular(8),
                                                 ),
                                                 child: Column(
                                                   children: [
@@ -516,8 +666,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                                       'GH₵ ${otherProduct.price.toStringAsFixed(0)}',
                                                       style: const TextStyle(
                                                         fontSize: 14,
-                                                        color: Color(0xff3B8751),
-                                                        fontWeight: FontWeight.bold,
+                                                        color: Color(
+                                                          0xff3B8751,
+                                                        ),
+                                                        fontWeight:
+                                                        FontWeight.bold,
                                                       ),
                                                     ),
                                                     Text(
@@ -532,25 +685,37 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(height: 2),
                                           Row(
+                                            mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                             children: [
                                               GestureDetector(
-                                                onTap: () => _callFarmer(otherProduct.phoneNumber),
+                                                onTap:
+                                                    () => _callFarmer(
+                                                  otherProduct.phoneNumber,
+                                                ),
                                                 child: Container(
                                                   decoration: BoxDecoration(
-                                                    color: const Color(0xff3B8751),
-                                                    borderRadius: BorderRadius.circular(5),
+                                                    color: const Color(
+                                                      0xff3B8751,
+                                                    ),
+                                                    borderRadius:
+                                                    BorderRadius.circular(
+                                                      5,
+                                                    ),
                                                   ),
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.symmetric(
-                                                      horizontal: 15,
+                                                  child: const Padding(
+                                                    padding:
+                                                    EdgeInsets.symmetric(
+                                                      horizontal: 9,
                                                       vertical: 5,
                                                     ),
-                                                    child: const Row(
+                                                    child: Row(
                                                       children: [
                                                         Icon(
-                                                          Icons.phone_in_talk_outlined,
+                                                          Icons
+                                                              .phone_in_talk_outlined,
                                                           color: Colors.white,
                                                           size: 14,
                                                         ),
@@ -565,6 +730,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                                       ],
                                                     ),
                                                   ),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                onPressed: () =>
+                                                    _markInterested(
+                                                        context, otherProduct),
+                                                icon: Icon(
+                                                  isOtherProductInterested
+                                                      ? Icons.favorite
+                                                      : Icons.favorite_border,
+                                                  color:
+                                                  isOtherProductInterested
+                                                      ? Colors.red
+                                                      : Colors.grey,
                                                 ),
                                               ),
                                             ],
@@ -585,7 +764,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                                     fontSize: 12,
                                                     color: Colors.grey,
                                                   ),
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                  TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
@@ -604,6 +784,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ],
                 ),
               ),
+
               SizedBox(height: (screenHeight * 0.03).clamp(16, 24)),
             ],
           ),
