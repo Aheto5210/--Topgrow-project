@@ -96,25 +96,25 @@ class _RoleSelectionState extends State<RoleSelection> {
                     ),
                   ),
                 ),
-                AnimatedPositioned(
-                  duration: const Duration(seconds: 1),
-                  curve: Curves.easeOut,
-                  bottom: _skipButtonPosition,
-                  right: 20,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Back to WelcomeScreen
-                    },
-                    child: const Text(
-                      'Skip >',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 20,
-                        color: Color.fromRGBO(63, 61, 86, 1),
-                      ),
-                    ),
-                  ),
-                ),
+                // AnimatedPositioned(
+                //   duration: const Duration(seconds: 1),
+                //   curve: Curves.easeOut,
+                //   bottom: _skipButtonPosition,
+                //   right: 20,
+                //   child: TextButton(
+                //     onPressed: () {
+                //       Navigator.pop(context); // Back to WelcomeScreen
+                //     },
+                //     child: const Text(
+                //       'Skip >',
+                //       style: TextStyle(
+                //         fontWeight: FontWeight.w400,
+                //         fontSize: 20,
+                //         color: Color.fromRGBO(63, 61, 86, 1),
+                //       ),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
