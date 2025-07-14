@@ -270,6 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: TextField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
+                      enabled: false,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color(0xffF7F7F7),
@@ -277,9 +278,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Color(0xffFFFFFF)),
                         ),
-                        focusedBorder: OutlineInputBorder(
+                        disabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: primaryGreen),
+                          borderSide: const BorderSide(color: Colors.grey),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       ),
@@ -314,7 +315,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   ListTile(
                     leading: Container(
                       padding: const EdgeInsets.all(8),
@@ -465,28 +465,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            // const SizedBox(height: 16),
-            // SizedBox(
-            //   width: size.width * 0.7,
-            //   child: ElevatedButton(
-            //     onPressed: () {
-            //       Navigator.pushNamed(context, RoleSelection.id);
-            //     },
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: Color(0xffEAB916),
-            //       padding: const EdgeInsets.symmetric(vertical: 12),
-            //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            //     ),
-            //     child: Text(
-            //       'Become a Buyer',
-            //       style: TextStyle(
-            //         fontFamily: 'qwerty',
-            //         fontSize: textScaler.scale(size.width * 0.04).clamp(12, 14),
-            //         color: Colors.white,
-            //       ),
-            //     ),
-            //   ),
-            // ),
           ],
         ),
       ),

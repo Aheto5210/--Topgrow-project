@@ -270,6 +270,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                     child: TextField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
+                      enabled: false, // Make phone number field uneditable
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color(0xffF7F7F7),
@@ -277,9 +278,9 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Color(0xffFFFFFF)),
                         ),
-                        focusedBorder: OutlineInputBorder(
+                        disabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: primaryGreen),
+                          borderSide: const BorderSide(color: Colors.grey),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       ),
@@ -314,7 +315,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   ListTile(
                     leading: Container(
                       padding: const EdgeInsets.all(8),
@@ -465,7 +465,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                 ],
               ),
             ),
-
           ],
         ),
       ),
