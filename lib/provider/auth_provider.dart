@@ -70,12 +70,13 @@ class AuthProvider with ChangeNotifier {
     return !connectivityResults.contains(ConnectivityResult.none);
   }
 
-  // Checks if a phone number exists in Firestore
-  Future<bool> checkPhoneNumberExists(String phoneNumber) async {
+  // Checks if a phone number exists in Firestore and matches the specified role
+  Future<bool> checkPhoneNumberExists(String phoneNumber, String expectedRole) async {
     try {
       final query = await _firestore
           .collection('users')
           .where('phoneNumber', isEqualTo: phoneNumber)
+          .where('role', isEqualTo: expectedRole)
           .get();
       return query.docs.isNotEmpty;
     } catch (e) {
@@ -91,15 +92,16 @@ class AuthProvider with ChangeNotifier {
     required String phoneNumber,
     required BuildContext context,
     required Function(String) onCodeSent,
+    required String role, // Added role parameter to enforce role-based sign-in
   }) async {
     if (!await _isConnected()) {
       throw AuthException('No internet. Please connect and retry.');
     }
 
     try {
-      final phoneExists = await checkPhoneNumberExists(phoneNumber);
+      final phoneExists = await checkPhoneNumberExists(phoneNumber, role);
       if (!phoneExists) {
-        throw AuthException('Phone number not found. Sign up instead.');
+        throw AuthException('Phone number not found for $role account. Sign up or use correct role.');
       }
 
       await _auth.verifyPhoneNumber(
@@ -141,8 +143,11 @@ class AuthProvider with ChangeNotifier {
     }
 
     try {
-      final phoneExists = await checkPhoneNumberExists(phoneNumber);
-      if (phoneExists) {
+      final phoneExists = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: phoneNumber)
+          .get();
+      if (phoneExists.docs.isNotEmpty) {
         throw AuthException('Phone number already exists. Sign in instead.');
       }
 
@@ -212,6 +217,13 @@ class AuthProvider with ChangeNotifier {
           'role': role,
           'createdAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+      } else {
+        // Verify role matches stored role during sign-in
+        final doc = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+        if (!doc.exists || doc.data()?['role'] != role) {
+          await _auth.signOut();
+          throw AuthException('Invalid role. Please sign in with the correct role.');
+        }
       }
 
       await _fetchUserData(_auth.currentUser!.uid);

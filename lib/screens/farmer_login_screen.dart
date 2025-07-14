@@ -76,6 +76,7 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
             isSignup: false,
           );
         },
+        role: role, // Added role parameter
       );
     } on AuthException catch (e) {
       setState(() {
@@ -89,6 +90,7 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
       _showErrorSnackBar('Something went wrong. Please retry.');
     }
   }
+
   // Shows error snackbar with the provided message
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -195,7 +197,7 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
                           }
                         },
                       ),
-                      SizedBox(height: (screenHeight * 0.03).clamp(12, 24)),
+                      SizedBox(height: (screenHeight * 0.03).clamp(12,24)),
                       CustomElevatedButton(
                         text: _isLoading ? 'Signing In...' : 'Sign In',
                         onPressed: _isLoading ? null : _startSignIn,

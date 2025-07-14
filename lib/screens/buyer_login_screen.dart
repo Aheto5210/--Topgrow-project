@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:top_grow_project/buyer_bot_nav.dart';
 import 'package:top_grow_project/constants.dart';
- import 'package:top_grow_project/screens/buyer_signup_screen.dart';
+import 'package:top_grow_project/screens/buyer_signup_screen.dart';
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
 import 'package:top_grow_project/widgets/custom_textfield.dart';
 import 'package:top_grow_project/widgets/otp_bottom_sheet.dart';
@@ -74,6 +74,7 @@ class _BuyerSigninScreenState extends State<BuyerSigninScreen> {
             isSignup: false,
           );
         },
+        role: role, // Added role parameter
       );
     } on AuthException catch (e) {
       setState(() {

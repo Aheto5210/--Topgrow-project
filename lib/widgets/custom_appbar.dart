@@ -42,15 +42,15 @@ class _CustomAppbarState extends State<CustomAppbar> {
                   'What are you looking for?',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 25,
+                    fontSize: 20,
                     fontFamily: 'qwerty',
                     color: Colors.white,
                   ),
                 ),
-                const Spacer(flex: 2),
+                const Spacer(flex: 1),
               ],
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             TextField(
               onTap: (){
            Navigator.pushNamed(context, SearchScreen.id);
@@ -79,7 +79,7 @@ class _CustomAppbarState extends State<CustomAppbar> {
               ),
             ),
 
-            SizedBox(height: 40),
+            SizedBox(height: 20),
           ],
         ),
       ),

@@ -162,87 +162,38 @@ class FarmerHomeScreen extends StatelessWidget {
                                             product.name,
                                             style: const TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              fontSize: 16,
+                                              fontSize: 14,
                                             ),
-                                            overflow: TextOverflow.ellipsis,
+                                            overflow: TextOverflow.visible,
                                             maxLines: 1,
                                           ),
                                         ),
                                         // Price and Size in a Container
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xffD9D9D9),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              Text(
-                                                'GH₵ ${product.price.toStringAsFixed(0)}',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  color: Color(0xff3B8751),
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                        Column(
+                                          children: [
+                                            Text(
+                                              'GH₵ ${product.price.toStringAsFixed(0)}',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Color(0xff3B8751),
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                              Text(
-                                                product.size,
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                            ),
+
+                                          ],
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 4),
                                     Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        GestureDetector(
-                                          onTap: () => _callFarmer(context, product.phoneNumber),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xff3B8751),
-                                              borderRadius: BorderRadius.circular(5),
-                                            ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                                              child: const Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.phone_in_talk_outlined,
-                                                    color: Colors.white,
-                                                    size: 14,
-                                                  ),
-                                                  SizedBox(width: 6),
-                                                  Text(
-                                                    'Call Farmer',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
+
                                         const Icon(
                                           Icons.location_on,
                                           size: 14,
                                           color: Color(0xffDA4240),
                                         ),
-                                        const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
                                             product.location,
@@ -253,8 +204,52 @@ class FarmerHomeScreen extends StatelessWidget {
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
+                                        Text(
+                                          product.size,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
                                       ],
                                     ),
+                                    const SizedBox(height: 4),
+
+                                        Column(
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => _callFarmer(context, product.phoneNumber),
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xff3B8751),
+                                                  borderRadius: BorderRadius.circular(5),
+                                                ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                                                  child: const Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.phone_in_talk_outlined,
+                                                        color: Colors.white,
+                                                        size: 14,
+                                                      ),
+                                                      SizedBox(width: 6),
+                                                      Text(
+                                                        'Call Farmer',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 14,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+
                                   ],
                                 ),
                               ),
