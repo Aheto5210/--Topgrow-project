@@ -187,7 +187,7 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                     ),
                   ),
                   Positioned(
-                    top: 12,
+                    top: 40,
                     left: 8,
                     child: IconButton(
                       icon: const Icon(
@@ -626,124 +626,64 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Column(
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Row(
-                                            mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  otherProduct.name,
+                                                  product.name,
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 16,
                                                   ),
-                                                  overflow:
-                                                  TextOverflow.ellipsis,
+                                                  overflow: TextOverflow.ellipsis,
                                                   maxLines: 1,
                                                 ),
                                               ),
-                                              Container(
-                                                padding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 4,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(
-                                                    0xffD9D9D9,
+                                              Column(
+                                                children: [
+                                                  Text(
+                                                    'GH₵ ${product.price.toStringAsFixed(0)}',
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: Color(0xff3B8751),
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
-                                                  borderRadius:
-                                                  BorderRadius.circular(8),
-                                                ),
-                                                child: Column(
-                                                  children: [
-                                                    Text(
-                                                      'GH₵ ${otherProduct.price.toStringAsFixed(0)}',
-                                                      style: const TextStyle(
-                                                        fontSize: 14,
-                                                        color: Color(
-                                                          0xff3B8751,
-                                                        ),
-                                                        fontWeight:
-                                                        FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      otherProduct.size,
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.grey,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
+
+                                                ],
                                               ),
+
                                             ],
+
                                           ),
-                                          const SizedBox(height: 2),
                                           Row(
-                                            mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              GestureDetector(
-                                                onTap:
-                                                    () => _callFarmer(
-                                                  otherProduct.phoneNumber,
-                                                ),
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(
-                                                      0xff3B8751,
-                                                    ),
-                                                    borderRadius:
-                                                    BorderRadius.circular(
-                                                      5,
-                                                    ),
+
+                                              const Icon(
+                                                Icons.location_on,
+                                                size: 14,
+                                                color: Color(0xffDA4240),
+                                              ),
+                                              Expanded(
+                                                child: Text(
+                                                  product.location,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey,
                                                   ),
-                                                  child: const Padding(
-                                                    padding:
-                                                    EdgeInsets.symmetric(
-                                                      horizontal: 9,
-                                                      vertical: 5,
-                                                    ),
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons
-                                                              .phone_in_talk_outlined,
-                                                          color: Colors.white,
-                                                          size: 14,
-                                                        ),
-                                                        SizedBox(width: 6),
-                                                        Text(
-                                                          'Call Farmer',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 14,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
-                                              IconButton(
-                                                onPressed: () =>
-                                                    _markInterested(
-                                                        context, otherProduct),
-                                                icon: Icon(
-                                                  isOtherProductInterested
-                                                      ? Icons.favorite
-                                                      : Icons.favorite_border,
-                                                  color:
-                                                  isOtherProductInterested
-                                                      ? Colors.red
-                                                      : Colors.grey,
+                                              Text(
+                                                product.size,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey,
                                                 ),
                                               ),
                                             ],
@@ -751,28 +691,54 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                           const SizedBox(height: 4),
                                           Row(
                                             children: [
-                                              const Icon(
-                                                Icons.location_on,
-                                                size: 14,
-                                                color: Color(0xffDA4240),
-                                              ),
-                                              const SizedBox(width: 4),
                                               Expanded(
-                                                child: Text(
-                                                  otherProduct.location,
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey,
+                                                child: GestureDetector(
+                                                  onTap: () => _callFarmer(context as String?),
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xff3B8751),
+                                                      borderRadius: BorderRadius.circular(5),
+                                                    ),
+                                                    child: const Padding(
+                                                      padding: EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 5,
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Icon(
+                                                            Icons.phone_in_talk_outlined,
+                                                            color: Colors.white,
+                                                            size: 14,
+                                                          ),
+                                                          SizedBox(width: 6),
+                                                          Text(
+                                                            'Call Farmer',
+                                                            style: TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 14,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
                                                   ),
-                                                  overflow:
-                                                  TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                onPressed: () => _markInterested(context, product),
+                                                icon: Icon(
+                                                  isInterested ? Icons.favorite : Icons.favorite_border,
+                                                  color: isInterested ? Colors.red : Colors.grey,
                                                 ),
                                               ),
                                             ],
                                           ),
+
                                         ],
                                       ),
-                                    ),
+                                    ), //ends here
                                   ],
                                 ),
                               ),

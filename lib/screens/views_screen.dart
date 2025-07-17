@@ -16,10 +16,22 @@ class ViewsScreen extends StatefulWidget {
 class _ViewsScreenState extends State<ViewsScreen> {
   final currentUser = FirebaseAuth.instance.currentUser;
 
+  // Function to mark a product as interested
+  Future<void> markProductAsInterested(String productId, String userId) async {
+    try {
+      await FirebaseFirestore.instance.collection('products').doc(productId).update({
+        'interestedBuyers': FieldValue.arrayUnion([userId]),
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error marking product as interested: $e')),
+      );
+      debugPrint('Error marking product as interested: $e');
+    }
+  }
+
   // Function to clear all buyer interests with confirmation dialog
-  Future<void> _clearAllInterests(
-      List<Map<String, dynamic>> buyerInterests,
-      ) async {
+  Future<void> _clearAllInterests(List<Map<String, dynamic>> buyerInterests) async {
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -43,14 +55,12 @@ class _ViewsScreenState extends State<ViewsScreen> {
     try {
       for (var interest in buyerInterests) {
         final product = interest['product'] as Product;
-        for (var buyerId in product.interestedBuyers) {
-          await FirebaseFirestore.instance
-              .collection('products')
-              .doc(product.id)
-              .update({
-            'interestedBuyers': FieldValue.arrayRemove([buyerId]),
-          });
-        }
+        await FirebaseFirestore.instance
+            .collection('products')
+            .doc(product.id)
+            .update({
+          'interestedBuyers': [],
+        });
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('All buyer interests cleared')),
@@ -59,16 +69,24 @@ class _ViewsScreenState extends State<ViewsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error clearing interests: $e')),
       );
+      debugPrint('Error clearing interests: $e');
     }
   }
 
   // Function to handle refresh logic
   Future<void> _refreshInterests() async {
     await Future.delayed(const Duration(milliseconds: 500));
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text('Please log in to view this page')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -97,16 +115,14 @@ class _ViewsScreenState extends State<ViewsScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
+                    final products = await FirebaseFirestore.instance
+                        .collection('products')
+                        .where('farmerId', isEqualTo: currentUser!.uid)
+                        .get();
                     final buyerInterests = await _fetchBuyerDetails(
-                      (await FirebaseFirestore.instance
-                          .collection('products')
-                          .where('farmerId', isEqualTo: currentUser?.uid)
-                          .get())
-                          .docs
+                      products.docs
                           .map((doc) => Product.fromFirestore(doc))
-                          .where(
-                            (product) => product.interestedBuyers.isNotEmpty,
-                      )
+                          .where((product) => product.interestedBuyers.isNotEmpty)
                           .toList(),
                     );
                     await _clearAllInterests(buyerInterests);
@@ -129,15 +145,15 @@ class _ViewsScreenState extends State<ViewsScreen> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('products')
-                  .where('farmerId', isEqualTo: currentUser?.uid)
+                  .where('farmerId', isEqualTo: currentUser!.uid)
                   .snapshots(),
               builder: (context, productSnapshot) {
-                if (productSnapshot.connectionState ==
-                    ConnectionState.waiting) {
+                if (productSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 if (productSnapshot.hasError) {
+                  debugPrint('StreamBuilder error: ${productSnapshot.error}');
                   return Center(child: Text('Error: ${productSnapshot.error}'));
                 }
 
@@ -157,21 +173,17 @@ class _ViewsScreenState extends State<ViewsScreen> {
                 return FutureBuilder<List<Map<String, dynamic>>>(
                   future: _fetchBuyerDetails(products),
                   builder: (context, buyerSnapshot) {
-                    if (buyerSnapshot.connectionState ==
-                        ConnectionState.waiting) {
+                    if (buyerSnapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
                     if (buyerSnapshot.hasError) {
-                      return Center(
-                        child: Text('Error: ${buyerSnapshot.error}'),
-                      );
+                      debugPrint('FutureBuilder error: ${buyerSnapshot.error}');
+                      return Center(child: Text('Error: ${buyerSnapshot.error}'));
                     }
 
                     if (!buyerSnapshot.hasData || buyerSnapshot.data!.isEmpty) {
-                      return const Center(
-                        child: Text('No buyer details found'),
-                      );
+                      return const Center(child: Text('No buyer details found'));
                     }
 
                     final buyerInterests = buyerSnapshot.data!;
@@ -186,15 +198,18 @@ class _ViewsScreenState extends State<ViewsScreen> {
                           final interest = buyerInterests[index];
                           final product = interest['product'] as Product;
 
-                          // Format the postedDate using DateFormat
+                          // Format the postedDate with robust handling
                           String formattedDate;
                           if (product.postedDate is Timestamp) {
                             formattedDate = DateFormat('MMM d, yyyy').format(
                               (product.postedDate as Timestamp).toDate(),
                             );
+                          } else if (product.postedDate is DateTime) {
+                            formattedDate = DateFormat('MMM d, yyyy').format(
+                              product.postedDate as DateTime,
+                            );
                           } else {
-                            formattedDate = DateFormat('MMM d, yyyy')
-                                .format(DateTime.now());
+                            formattedDate = 'Unknown Date';
                           }
 
                           return Card(
@@ -214,8 +229,7 @@ class _ViewsScreenState extends State<ViewsScreen> {
                                 ),
                               ),
                               title: Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     product.name,
@@ -252,8 +266,7 @@ class _ViewsScreenState extends State<ViewsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Row(
                                         children: [
@@ -265,9 +278,7 @@ class _ViewsScreenState extends State<ViewsScreen> {
                                           const SizedBox(width: 4),
                                           Text(
                                             product.location,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                            ),
+                                            style: const TextStyle(fontSize: 14),
                                           ),
                                         ],
                                       ),
@@ -277,8 +288,7 @@ class _ViewsScreenState extends State<ViewsScreen> {
                                           Container(
                                             decoration: BoxDecoration(
                                               color: const Color(0xff3B8751),
-                                              borderRadius:
-                                              BorderRadius.circular(5),
+                                              borderRadius: BorderRadius.circular(5),
                                             ),
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 12,
@@ -313,22 +323,12 @@ class _ViewsScreenState extends State<ViewsScreen> {
     );
   }
 
-  Future<List<Map<String, dynamic>>> _fetchBuyerDetails(
-      List<Product> products,
-      ) async {
+  Future<List<Map<String, dynamic>>> _fetchBuyerDetails(List<Product> products) async {
     final interests = <Map<String, dynamic>>[];
 
     for (var product in products) {
-      for (var buyerId in product.interestedBuyers) {
-        final buyerDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(buyerId)
-            .get();
-        final buyer = buyerDoc.exists
-            ? buyerDoc.data() as Map<String, dynamic>
-            : {'name': 'Unknown', 'phoneNumber': null};
-
-        interests.add({'product': product, 'buyer': buyer});
+      if (product.interestedBuyers.isNotEmpty) {
+        interests.add({'product': product, 'buyer': null});
       }
     }
 

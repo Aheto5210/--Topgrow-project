@@ -252,7 +252,7 @@ class FarmerHomeScreen extends StatelessWidget {
 
                                   ],
                                 ),
-                              ),
+                              ),    // ends here
                             ],
                           ),
                         ),

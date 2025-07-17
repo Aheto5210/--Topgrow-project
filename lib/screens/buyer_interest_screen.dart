@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:top_grow_project/models/product.dart';
+import 'package:top_grow_project/screens/buyer_product_details_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BuyerInterestScreen extends StatefulWidget {
@@ -225,117 +226,125 @@ class _BuyerInterestScreenState extends State<BuyerInterestScreen> {
                             formattedDate = DateFormat('MMM d, yyyy').format(DateTime.now());
                           }
 
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: ListTile(
-                              leading: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  product.imageUrls.isNotEmpty
-                                      ? product.imageUrls[0]
-                                      : '',
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.image_not_supported),
-                                ),
-                              ),
-                              title: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    product.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
+                          return GestureDetector(
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              BuyerProductDetailsScreen.id,
+                              arguments: product,
+                            ),
+                            child: Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              child: ListTile(
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    product.imageUrls.isNotEmpty
+                                        ? product.imageUrls[0]
+                                        : '',
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.image_not_supported),
                                   ),
-                                  const SizedBox(width: 8),
-                                  RichText(
-                                    text: TextSpan(
+                                ),
+                                title: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      product.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    RichText(
+                                      text: TextSpan(
+                                        children: [
+                                          const TextSpan(
+                                            text: 'Date Posted: ',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xff3B8751),
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: formattedDate,
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        const TextSpan(
-                                          text: 'Date Posted: ',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xff3B8751),
-                                          ),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.location_on,
+                                              size: 16,
+                                              color: Color(0xffDA4240),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              product.location,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                  overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        TextSpan(
-                                          text: formattedDate,
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.grey,
-                                          ),
+                                        Row(
+                                          children: [
+                                            const SizedBox(width: 8),
+                                            GestureDetector(
+                                              onTap: () => _callFarmer(context, product.phoneNumber),
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xff3B8751),
+                                                  borderRadius: BorderRadius.circular(5),
+                                                ),
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 6,
+                                                ),
+                                                child: const Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.phone_in_talk_outlined,
+                                                      color: Colors.white,
+                                                      size: 14,
+                                                    ),
+                                                    SizedBox(width: 6),
+                                                    Text(
+                                                      'Call Farmer',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.location_on,
-                                            size: 16,
-                                            color: Color(0xffDA4240),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            product.location,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          const SizedBox(width: 8),
-                                          GestureDetector(
-                                            onTap: () => _callFarmer(context, product.phoneNumber),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xff3B8751),
-                                                borderRadius: BorderRadius.circular(5),
-                                              ),
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 6,
-                                              ),
-                                              child: const Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.phone_in_talk_outlined,
-                                                    color: Colors.white,
-                                                    size: 14,
-                                                  ),
-                                                  SizedBox(width: 6),
-                                                  Text(
-                                                    'Call Farmer',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           );

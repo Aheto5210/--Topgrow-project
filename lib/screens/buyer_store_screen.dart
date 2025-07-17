@@ -200,33 +200,47 @@ class BuyerStoreScreen extends StatelessWidget {
                                             maxLines: 1,
                                           ),
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xffD9D9D9),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              Text(
-                                                'GH₵ ${product.price.toStringAsFixed(0)}',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  color: Color(0xff3B8751),
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                        Column(
+                                          children: [
+                                            Text(
+                                              'GH₵ ${product.price.toStringAsFixed(0)}',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xff3B8751),
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                              Text(
-                                                product.size,
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                            ],
+                                            ),
+
+                                          ],
+                                        ),
+
+                                      ],
+
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+
+                                        const Icon(
+                                          Icons.location_on,
+                                          size: 14,
+                                          color: Color(0xffDA4240),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            product.location,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Text(
+                                          product.size,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
                                           ),
                                         ),
                                       ],
@@ -278,27 +292,7 @@ class BuyerStoreScreen extends StatelessWidget {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.location_on,
-                                          size: 14,
-                                          color: Color(0xffDA4240),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            product.location,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+
                                   ],
                                 ),
                               ),
