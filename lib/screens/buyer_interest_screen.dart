@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:top_grow_project/models/product.dart';
 import 'package:top_grow_project/screens/buyer_product_details_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:auto_size_text/auto_size_text.dart'; // For responsive text
 
 class BuyerInterestScreen extends StatefulWidget {
   static String id = 'buyer_interest_screen';
@@ -69,7 +70,6 @@ class _BuyerInterestScreenState extends State<BuyerInterestScreen> {
             'interestedBuyers': FieldValue.arrayRemove([currentUser!.uid]),
           });
 
-          // Also remove from Interests collection
           await FirebaseFirestore.instance
               .collection('Interests')
               .where('buyerId', isEqualTo: currentUser!.uid)
@@ -99,271 +99,351 @@ class _BuyerInterestScreenState extends State<BuyerInterestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text(
-          'Interested Products',
-          style: TextStyle(
-            fontFamily: 'qwerty',
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: const Color(0xff3B8751),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Interested Products:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final products = await _fetchProductsFromInterests(
-                      (await FirebaseFirestore.instance
-                          .collection('Interests')
-                          .where('buyerId', isEqualTo: currentUser?.uid)
-                          .get())
-                          .docs,
-                    );
-                    await _clearAllInterests(products);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white70,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                  child: const Text(
-                    'Clear',
-                    style: TextStyle(color: Colors.black),
-                  ),
-                ),
-              ],
+    // Get screen size for responsive calculations
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scaleFactor = screenWidth / 375.0; // Reference width (e.g., iPhone 8)
+
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          title: AutoSizeText(
+            'Interested Products',
+            style: const TextStyle(
+              fontFamily: 'qwerty',
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              color: Colors.white,
             ),
+            maxLines: 1,
+            minFontSize: 16,
+            overflow: TextOverflow.ellipsis,
           ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('Interests')
-                  .where('buyerId', isEqualTo: currentUser?.uid)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Text('Error: ${snapshot.error}'),
+          backgroundColor: const Color(0xff3B8751),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 16.0 * scaleFactor,
+                vertical: 8.0 * scaleFactor,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: AutoSizeText(
+                      'Interested Products:',
+                      style: TextStyle(
+                        fontSize: 16 * scaleFactor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      minFontSize: 12,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  );
-                }
-
-                if (snapshot.data?.docs.isEmpty ?? true) {
-                  return const Center(
-                    child: SingleChildScrollView(
-                      physics: AlwaysScrollableScrollPhysics(),
-                      child: Text('No interested products yet'),
+                  ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: screenWidth * 0.3,
+                      minWidth: 80.0,
                     ),
-                  );
-                }
-
-                return FutureBuilder<List<Product>>(
-                  future: _fetchProductsFromInterests(snapshot.data!.docs),
-                  builder: (context, productSnapshot) {
-                    if (productSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (productSnapshot.hasError) {
-                      return Center(
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: Text('Error: ${productSnapshot.error}'),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final products = await _fetchProductsFromInterests(
+                          (await FirebaseFirestore.instance
+                              .collection('Interests')
+                              .where('buyerId', isEqualTo: currentUser?.uid)
+                              .get())
+                              .docs,
+                        );
+                        await _clearAllInterests(products);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white70,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5 * scaleFactor),
                         ),
-                      );
-                    }
-
-                    if (!productSnapshot.hasData || productSnapshot.data!.isEmpty) {
-                      return const Center(
-                        child: SingleChildScrollView(
-                          physics: AlwaysScrollableScrollPhysics(),
-                          child: Text('No products found'),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10 * scaleFactor,
+                          vertical: 6 * scaleFactor,
                         ),
-                      );
-                    }
+                      ),
+                      child: AutoSizeText(
+                        'Clear',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 14 * scaleFactor,
+                        ),
+                        maxLines: 1,
+                        minFontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('Interests')
+                    .where('buyerId', isEqualTo: currentUser?.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                    final products = productSnapshot.data!;
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: AutoSizeText(
+                          'Error: ${snapshot.error}',
+                          style: TextStyle(fontSize: 14 * scaleFactor),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          minFontSize: 10,
+                        ),
+                      ),
+                    );
+                  }
 
-                    return RefreshIndicator(
-                      onRefresh: _refreshInterests,
-                      color: const Color(0xff3B8751),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8),
-                        itemCount: products.length,
-                        itemBuilder: (context, index) {
-                          final product = products[index];
+                  if (snapshot.data?.docs.isEmpty ?? true) {
+                    return Center(
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: AutoSizeText(
+                          'No interested products yet',
+                          style: TextStyle(fontSize: 16 * scaleFactor),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          minFontSize: 12,
+                        ),
+                      ),
+                    );
+                  }
 
-                          // Format the postedDate using DateFormat
-                          String formattedDate;
-                          if (product.postedDate is Timestamp) {
-                            formattedDate = DateFormat('MMM d, yyyy').format(
-                              (product.postedDate as Timestamp).toDate(),
-                            );
-                          } else {
-                            formattedDate = DateFormat('MMM d, yyyy').format(DateTime.now());
-                          }
+                  return FutureBuilder<List<Product>>(
+                    future: _fetchProductsFromInterests(snapshot.data!.docs),
+                    builder: (context, productSnapshot) {
+                      if (productSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                          return GestureDetector(
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              BuyerProductDetailsScreen.id,
-                              arguments: product,
+                      if (productSnapshot.hasError) {
+                        return Center(
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: AutoSizeText(
+                              'Error: ${productSnapshot.error}',
+                              style: TextStyle(fontSize: 14 * scaleFactor),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              minFontSize: 10,
                             ),
-                            child: Card(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              child: ListTile(
-                                leading: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    product.imageUrls.isNotEmpty
-                                        ? product.imageUrls[0]
-                                        : '',
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.image_not_supported),
+                          ),
+                        );
+                      }
+
+                      if (!productSnapshot.hasData || productSnapshot.data!.isEmpty) {
+                        return Center(
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: AutoSizeText(
+                              'No products found',
+                              style: TextStyle(fontSize: 16 * scaleFactor),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              minFontSize: 12,
+                            ),
+                          ),
+                        );
+                      }
+
+                      final products = productSnapshot.data!;
+
+                      return RefreshIndicator(
+                        onRefresh: _refreshInterests,
+                        color: const Color(0xff3B8751),
+                        child: ListView.builder(
+                          padding: EdgeInsets.all(8.0 * scaleFactor),
+                          itemCount: products.length,
+                          itemBuilder: (context, index) {
+                            final product = products[index];
+
+                            // Format the postedDate using DateFormat
+                            String formattedDate;
+                            if (product.postedDate is Timestamp) {
+                              formattedDate = DateFormat('MMM d, yyyy').format(
+                                (product.postedDate as Timestamp).toDate(),
+                              );
+                            } else {
+                              formattedDate = DateFormat('MMM d, yyyy').format(DateTime.now());
+                            }
+
+                            return GestureDetector(
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                BuyerProductDetailsScreen.id,
+                                arguments: product,
+                              ),
+                              child: Card(
+                                margin: EdgeInsets.symmetric(vertical: 8.0 * scaleFactor),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.all(8.0 * scaleFactor),
+                                  leading: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8 * scaleFactor),
+                                    child: Image.network(
+                                      product.imageUrls.isNotEmpty
+                                          ? product.imageUrls[0]
+                                          : '',
+                                      width: 60 * scaleFactor,
+                                      height: 60 * scaleFactor,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Icon(
+                                            Icons.image_not_supported,
+                                            size: 40 * scaleFactor,
+                                          ),
+                                    ),
                                   ),
-                                ),
-                                title: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      product.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    RichText(
-                                      text: TextSpan(
-                                        children: [
-                                          const TextSpan(
-                                            text: 'Date Posted: ',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xff3B8751),
-                                            ),
+                                  title: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Flexible(
+                                        child: AutoSizeText(
+                                          product.name,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16 * scaleFactor,
                                           ),
-                                          TextSpan(
-                                            text: formattedDate,
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.location_on,
-                                              size: 16,
-                                              color: Color(0xffDA4240),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              product.location,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                  overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
+                                          maxLines: 1,
+                                          minFontSize: 12,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        Row(
-                                          children: [
-                                            const SizedBox(width: 8),
-                                            GestureDetector(
+                                      ),
+                                      SizedBox(width: 8 * scaleFactor),
+                                      Flexible(
+                                        child: RichText(
+                                          text: TextSpan(
+                                            children: [
+                                              TextSpan(
+                                                text: 'Date Posted: ',
+                                                style: TextStyle(
+                                                  fontSize: 10 * scaleFactor,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: const Color(0xff3B8751),
+                                                ),
+                                              ),
+                                              TextSpan(
+                                                text: formattedDate,
+                                                style: TextStyle(
+                                                  fontSize: 10 * scaleFactor,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Flexible(
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.location_on,
+                                                  size: 16 * scaleFactor,
+                                                  color: const Color(0xffDA4240),
+                                                ),
+                                                SizedBox(width: 2 * scaleFactor),
+                                                Flexible(
+                                                  child: AutoSizeText(
+                                                    product.location,
+                                                    style: TextStyle(
+                                                      fontSize: 14 * scaleFactor,
+                                                    ),
+                                                    maxLines: 1,
+                                                    minFontSize: 10,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxWidth: screenWidth * 0.4,
+                                              minWidth: 80.0,
+                                            ),
+                                            child: GestureDetector(
                                               onTap: () => _callFarmer(context, product.phoneNumber),
                                               child: Container(
                                                 decoration: BoxDecoration(
                                                   color: const Color(0xff3B8751),
-                                                  borderRadius: BorderRadius.circular(5),
+                                                  borderRadius: BorderRadius.circular(5 * scaleFactor),
                                                 ),
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 12,
-                                                  vertical: 6,
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 10 * scaleFactor,
+                                                  vertical: 6 * scaleFactor,
                                                 ),
-                                                child: const Row(
+                                                child: Row(
                                                   mainAxisSize: MainAxisSize.min,
                                                   children: [
                                                     Icon(
                                                       Icons.phone_in_talk_outlined,
                                                       color: Colors.white,
-                                                      size: 14,
+                                                      size: 14 * scaleFactor,
                                                     ),
-                                                    SizedBox(width: 6),
-                                                    Text(
+                                                    SizedBox(width: 6 * scaleFactor),
+                                                    AutoSizeText(
                                                       'Call Farmer',
                                                       style: TextStyle(
                                                         color: Colors.white,
-                                                        fontSize: 14,
+                                                        fontSize: 14 * scaleFactor,
                                                       ),
+                                                      maxLines: 1,
+                                                      minFontSize: 10,
                                                     ),
                                                   ],
                                                 ),
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                );
-              },
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Future<List<Product>> _fetchProductsFromInterests(
-      List<QueryDocumentSnapshot> interestDocs,
-      ) async {
+      List<QueryDocumentSnapshot> interestDocs) async {
     final productIds = interestDocs.map((doc) => doc['productId'] as String).toList();
     if (productIds.isEmpty) return [];
 

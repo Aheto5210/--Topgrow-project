@@ -7,7 +7,7 @@ class Constants {
   static const List<String> categories = [
     'Vegetables',
     'Fruits',
-    'Grains & Cereals',
+    'Cereals',
     'Dairy',
     'Meat',
     'Herbs',

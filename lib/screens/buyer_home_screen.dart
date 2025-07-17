@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';import 'package:top_grow_project/widgets/custom_appbar.dart';
+import 'package:flutter/material.dart';
+import 'package:top_grow_project/widgets/custom_appbar.dart';
 
 import 'Category_detail_screen.dart';
 
@@ -11,7 +12,7 @@ class BuyerHomeScreen extends StatelessWidget {
     {'name': 'Meats', 'image': 'assets/images/beef.png'},
     {'name': 'Organic Produce', 'image': 'assets/images/organn.png'},
     {'name': 'Tubers', 'image': 'assets/images/yam.png'},
-    {'name': 'Grains', 'image': 'assets/images/grains.png'},
+    {'name': 'Cereals', 'image': 'assets/images/grains.png'},
     {'name': 'Herbs', 'image': 'assets/images/herb.webp'},
     {'name': 'Legume', 'image': 'assets/images/legume.png'},
     {'name': 'Oils & Fats', 'image': 'assets/images/oil.png'},
@@ -41,7 +42,7 @@ class BuyerHomeScreen extends StatelessWidget {
             hintText: "Search for any product",
             controller: TextEditingController(),
           ),
-           SizedBox(height: 40),
+          SizedBox(height: 40),
           Expanded(
             child: GridView.builder(
               padding: const EdgeInsets.all(10),
@@ -62,14 +63,15 @@ class BuyerHomeScreen extends StatelessWidget {
                         child: Image.asset(
                           category['image']!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.error,
-                              color: Colors.red,
-                              size: 40,
-                            ),
-                          ),
+                          errorBuilder:
+                              (context, error, stackTrace) => Container(
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.error,
+                                  color: Colors.red,
+                                  size: 40,
+                                ),
+                              ),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -85,7 +87,6 @@ class BuyerHomeScreen extends StatelessWidget {
             ),
           ),
           SizedBox(height: 40),
-
         ],
       ),
     );

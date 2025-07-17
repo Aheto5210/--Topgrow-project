@@ -204,13 +204,12 @@ class _ViewsScreenState extends State<ViewsScreen> {
                             formattedDate = DateFormat('MMM d, yyyy').format(
                               (product.postedDate as Timestamp).toDate(),
                             );
-                          } else if (product.postedDate is DateTime) {
-                            formattedDate = DateFormat('MMM d, yyyy').format(
-                              product.postedDate as DateTime,
-                            );
                           } else {
-                            formattedDate = 'Unknown Date';
+                            formattedDate = DateFormat('MMM d, yyyy').format(
+                            product.postedDate,
+                          );
                           }
+                        
 
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 8),
