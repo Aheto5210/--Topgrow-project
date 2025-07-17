@@ -130,7 +130,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                   ),
                   Positioned(
-                    top: 12,
+                    top: 40,
                     left: 8,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),

@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:top_grow_project/constants.dart';
 import 'package:top_grow_project/screens/buyer_home_screen.dart';
 import 'package:top_grow_project/screens/farmer_signup_screen.dart';
+import 'package:top_grow_project/screens/role_selection.dart';
 import 'package:top_grow_project/widgets/custom_elevated_button.dart';
 import 'package:top_grow_project/widgets/custom_textfield.dart';
 import 'package:top_grow_project/widgets/otp_bottom_sheet.dart';
@@ -138,8 +139,17 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.grey[200],
+                        radius: 30,
+                        child: IconButton(
+                          onPressed: () {Navigator.pushNamed(context, RoleSelection.id);},
+                          icon: Icon(Icons.arrow_back, size: 25,
+                          ),
+                        ),
+                      ),
                       Center(
                         child: Hero(
                           tag: 'logo',
@@ -153,35 +163,39 @@ class _FarmerSigninScreenState extends State<FarmerSigninScreen> {
                           ),
                         ),
                       ),
-                      RichText(
-                        text: TextSpan(
-                          text: 'Sign In To Your',
-                          style: TextStyle(
-                            fontFamily: 'Qwerty',
-                            fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 28),
-                            color: const Color.fromRGBO(59, 135, 81, 1),
-                          ),
-                          children: [
-                            TextSpan(
-                              text: ' Farmer Account',
-                              style: TextStyle(
-                                fontFamily: 'Qwerty',
-                                fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 28),
-                                fontWeight: FontWeight.w400,
-                                color: Colors.black,
-                              ),
+                      Center(
+                        child: RichText(
+                          text: TextSpan(
+                            text: 'Sign In To Your',
+                            style: TextStyle(
+                              fontFamily: 'Qwerty',
+                              fontSize: textScaler.scale(screenWidth * 0.04).clamp(20, 28),
+                              color: const Color.fromRGBO(59, 135, 81, 1),
                             ),
-                          ],
+                            children: [
+                              TextSpan(
+                                text: ' Farmer Account',
+                                style: TextStyle(
+                                  fontFamily: 'Qwerty',
+                                  fontSize: textScaler.scale(screenWidth * 0.04).clamp(20, 28),
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
-                      Text(
-                        'Login as a Farmer',
-                        style: TextStyle(
-                          fontFamily: 'Qwerty',
-                          fontSize: textScaler.scale(screenWidth * 0.045).clamp(14, 20),
-                          fontWeight: FontWeight.w400,
-                          color: const Color.fromRGBO(121, 121, 121, 1),
+                      Center(
+                        child: Text(
+                          'Login as a Farmer',
+                          style: TextStyle(
+                            fontFamily: 'Qwerty',
+                            fontSize: textScaler.scale(screenWidth * 0.045).clamp(14, 20),
+                            fontWeight: FontWeight.w400,
+                            color: const Color.fromRGBO(121, 121, 121, 1),
+                          ),
                         ),
                       ),
                       SizedBox(height: (screenHeight * 0.04).clamp(16, 32)),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../service/product_services.dart';
 import '../widgets/product_form_sheet.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
 
 // Uses Firestore to stream products and a modal sheet for product forms.
 class ProductScreen extends StatefulWidget {
@@ -99,6 +100,7 @@ class _ProductScreenState extends State<ProductScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+     final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -108,7 +110,7 @@ class _ProductScreenState extends State<ProductScreen> {
           _buildCreateButton(context, size),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('products').snapshots(),
+              stream: FirebaseFirestore.instance.collection('products').where('farmerId', isEqualTo: currentUserId).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(

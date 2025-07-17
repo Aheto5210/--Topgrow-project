@@ -40,7 +40,8 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
 
     final fullName = _fullNameController.text.trim();
     final phoneNumber = _phoneNumberController.text.trim();
-    final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'farmer';
+    final role =
+        ModalRoute.of(context)?.settings.arguments as String? ?? 'farmer';
 
     setState(() {
       _fullNameError = fullName.isEmpty ? 'Enter your full name.' : null;
@@ -59,7 +60,9 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
 
     if (_fullNameError != null || _phoneNumberError != null) return;
 
-    if ((await Connectivity().checkConnectivity()).contains(ConnectivityResult.none)) {
+    if ((await Connectivity().checkConnectivity()).contains(
+      ConnectivityResult.none,
+    )) {
       _showErrorSnackBar('No internet. Please connect and retry.');
       return;
     }
@@ -107,10 +110,7 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
         backgroundColor: Colors.redAccent,
         content: Text(message),
         duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'Retry',
-          onPressed: _startSignUp,
-        ),
+        action: SnackBarAction(label: 'Retry', onPressed: _startSignUp),
       ),
     );
   }
@@ -147,8 +147,17 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.grey[200],
+                        radius: 30,
+                        child: IconButton(
+                          onPressed: () {Navigator.pushNamed(context, FarmerSigninScreen.id);},
+                          icon: Icon(Icons.arrow_back, size: 25,
+                        ),
+                      ),
+                      ),
                       Center(
                         child: Hero(
                           tag: 'logo',
@@ -162,35 +171,45 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
                           ),
                         ),
                       ),
-                      RichText(
-                        text: TextSpan(
-                          text: 'Create A New',
-                          style: TextStyle(
-                            fontFamily: 'Qwerty',
-                            fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 28),
-                            color: const Color.fromRGBO(59, 135, 81, 1),
-                          ),
-                          children: [
-                            TextSpan(
-                              text: ' Farmer Account',
-                              style: TextStyle(
-                                fontFamily: 'Qwerty',
-                                fontSize: textScaler.scale(screenWidth * 0.06).clamp(20, 28),
-                                fontWeight: FontWeight.w400,
-                                color: Colors.black,
-                              ),
+                      Center(
+                        child: RichText(
+                          text: TextSpan(
+                            text: 'Create A New',
+                            style: TextStyle(
+                              fontFamily: 'Qwerty',
+                              fontSize: textScaler
+                                  .scale(screenWidth * 0.04)
+                                  .clamp(20, 28),
+                              color: const Color.fromRGBO(59, 135, 81, 1),
                             ),
-                          ],
+                            children: [
+                              TextSpan(
+                                text: ' Farmer Account',
+                                style: TextStyle(
+                                  fontFamily: 'Qwerty',
+                                  fontSize: textScaler
+                                      .scale(screenWidth * 0.04)
+                                      .clamp(20, 28),
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
-                      Text(
-                        'Sign Up as a Farmer',
-                        style: TextStyle(
-                          fontFamily: 'Qwerty',
-                          fontSize: textScaler.scale(screenWidth * 0.045).clamp(14, 20),
-                          fontWeight: FontWeight.w400,
-                          color: const Color.fromRGBO(121, 121, 121, 1),
+                      Center(
+                        child: Text(
+                          'Sign Up as a Farmer',
+                          style: TextStyle(
+                            fontFamily: 'Qwerty',
+                            fontSize: textScaler
+                                .scale(screenWidth * 0.045)
+                                .clamp(14, 20),
+                            fontWeight: FontWeight.w400,
+                            color: const Color.fromRGBO(121, 121, 121, 1),
+                          ),
                         ),
                       ),
                       SizedBox(height: (screenHeight * 0.04).clamp(16, 32)),
@@ -221,7 +240,10 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
                       ),
                       SizedBox(height: (screenHeight * 0.03).clamp(12, 24)),
                       CustomElevatedButton(
-                        text: _isLoading ? 'Creating Account...' : 'Create Account',
+                        text:
+                            _isLoading
+                                ? 'Creating Account...'
+                                : 'Create Account',
                         onPressed: _isLoading ? null : _startSignUp,
                         isLoading: _isLoading,
                       ),
@@ -232,21 +254,35 @@ class _FarmerSignupScreenState extends State<FarmerSignupScreen> {
                           Text(
                             'Already have an account? ',
                             style: TextStyle(
-                              fontSize: textScaler.scale(screenWidth * 0.04).clamp(12, 18),
+                              fontSize: textScaler
+                                  .scale(screenWidth * 0.04)
+                                  .clamp(12, 18),
                               color: Colors.black54,
                             ),
                           ),
                           TextButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () {
-                              final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'farmer';
-                              Navigator.pushNamed(context, FarmerSigninScreen.id, arguments: role);
-                            },
+                            onPressed:
+                                _isLoading
+                                    ? null
+                                    : () {
+                                      final role =
+                                          ModalRoute.of(
+                                                context,
+                                              )?.settings.arguments
+                                              as String? ??
+                                          'farmer';
+                                      Navigator.pushNamed(
+                                        context,
+                                        FarmerSigninScreen.id,
+                                        arguments: role,
+                                      );
+                                    },
                             child: Text(
                               'Sign In',
                               style: TextStyle(
-                                fontSize: textScaler.scale(screenWidth * 0.04).clamp(12, 18),
+                                fontSize: textScaler
+                                    .scale(screenWidth * 0.04)
+                                    .clamp(12, 18),
                                 fontWeight: FontWeight.bold,
                                 color: const Color.fromRGBO(59, 135, 81, 1),
                               ),
