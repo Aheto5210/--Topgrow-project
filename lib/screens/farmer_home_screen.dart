@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Add this import for FirebaseAuth
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:top_grow_project/models/product.dart';
@@ -34,12 +35,14 @@ class FarmerHomeScreen extends StatelessWidget {
   Future<void> _refreshProducts() async {
     // Since StreamBuilder is already listening to Firestore, we don't need to manually refetch.
     // This can be used to force a UI refresh or handle additional logic if needed.
-    // For now, it simply delays slightly to give feedback to the user.
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
   @override
   Widget build(BuildContext context) {
+    // Get the current user's ID
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: const Color.fromRGBO(255, 255, 255, 1),
       body: Column(
@@ -50,8 +53,16 @@ class FarmerHomeScreen extends StatelessWidget {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('products').snapshots(),
+              stream: currentUserId != null
+                  ? FirebaseFirestore.instance
+                  .collection('products')
+                  .where('farmerId', isEqualTo: currentUserId)
+                  .snapshots()
+                  : const Stream.empty(), // Return empty stream if user is not logged in
               builder: (context, snapshot) {
+                if (currentUserId == null) {
+                  return const Center(child: Text('Please log in to view your products'));
+                }
                 if (snapshot.hasError) {
                   return const Center(child: Text('Error loading products'));
                 }
@@ -67,7 +78,7 @@ class FarmerHomeScreen extends StatelessWidget {
 
                 return RefreshIndicator(
                   onRefresh: _refreshProducts,
-                  color: const Color(0xff3B8751), // Match the app's theme color
+                  color: const Color(0xff3B8751),
                   child: GridView.builder(
                     padding: const EdgeInsets.all(10),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -179,7 +190,6 @@ class FarmerHomeScreen extends StatelessWidget {
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
-
                                           ],
                                         ),
                                       ],
@@ -188,7 +198,6 @@ class FarmerHomeScreen extends StatelessWidget {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-
                                         const Icon(
                                           Icons.location_on,
                                           size: 14,
@@ -214,42 +223,39 @@ class FarmerHomeScreen extends StatelessWidget {
                                       ],
                                     ),
                                     const SizedBox(height: 4),
-
-                                        Column(
-                                          children: [
-                                            GestureDetector(
-                                              onTap: () => _callFarmer(context, product.phoneNumber),
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xff3B8751),
-                                                  borderRadius: BorderRadius.circular(5),
-                                                ),
-                                                child: Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                                                  child: const Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.phone_in_talk_outlined,
-                                                        color: Colors.white,
-                                                        size: 14,
-                                                      ),
-                                                      SizedBox(width: 6),
-                                                      Text(
-                                                        'Call Farmer',
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 14,
-                                                        ),
-                                                      ),
-                                                    ],
+                                    Column(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => _callFarmer(context, product.phoneNumber),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xff3B8751),
+                                              borderRadius: BorderRadius.circular(5),
+                                            ),
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.phone_in_talk_outlined,
+                                                    color: Colors.white,
+                                                    size: 14,
                                                   ),
-                                                ),
+                                                  SizedBox(width: 6),
+                                                  Text(
+                                                    'Call Farmer',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ],
+                                          ),
                                         ),
-
-
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
