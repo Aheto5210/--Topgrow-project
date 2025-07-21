@@ -271,7 +271,7 @@ class BuyerStoreScreen extends StatelessWidget {
                                                     ),
                                                     SizedBox(width: 6),
                                                     Text(
-                                                      'Call Farmer',
+                                                      'Call',
                                                       style: TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 14,

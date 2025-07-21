@@ -634,7 +634,7 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  product.name,
+                                                  otherProduct.name,
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 16,
@@ -714,7 +714,7 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                                           ),
                                                           SizedBox(width: 6),
                                                           Text(
-                                                            'Call Farmer',
+                                                            'Call',
                                                             style: TextStyle(
                                                               color: Colors.white,
                                                               fontSize: 14,
