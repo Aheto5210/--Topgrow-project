@@ -82,9 +82,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                   children: [
                     SizedBox(
                       height: (screenHeight * 0.2).clamp(100, 180),
-                      width: (screenWidth * 0.5).clamp(120, 250),
+                      width: (screenWidth * 0.6).clamp(120, 250),
                       child: Image.asset(
-                        'assets/images/hand.png',
+                        'assets/images/hand2.png',
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
                       ),

@@ -20,6 +20,7 @@ import 'package:top_grow_project/screens/profile_screen.dart';
 import 'package:top_grow_project/screens/search_screen.dart';
 import 'package:top_grow_project/screens/views_screen.dart';
 import 'firebase_options.dart';
+import 'package:flutter/services.dart';
 import 'package:top_grow_project/screens/buyer_login_screen.dart';
 import 'package:top_grow_project/screens/buyer_signup_screen.dart';
 import 'package:top_grow_project/screens/farmer_signup_screen.dart';
@@ -31,6 +32,12 @@ import 'home_bot_nav.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock device orientation to portrait only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
