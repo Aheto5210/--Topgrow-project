@@ -29,8 +29,7 @@ class _RoleSelectionState extends State<RoleSelection> {
       videoId: 'jwCmIBJ8Jtc',
       params: const YoutubePlayerParams(
         showControls: true,
-        showFullscreenButton: true,
-        autoPlay: false,
+        showFullscreenButton: false,
         mute: false,
       ),
     );
