@@ -312,7 +312,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
   Widget _buildHeader(BuildContext context, Size size) {
     return Container(
-      height: size.height * 0.12, // Responsive height
+      height: size.height * 0.16, // Responsive height
       color: primaryGreen,
       child: Center(
         child: Text(

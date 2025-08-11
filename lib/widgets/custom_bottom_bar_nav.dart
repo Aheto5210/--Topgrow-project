@@ -33,6 +33,11 @@ class CustomBottomBarNav extends StatelessWidget {
             icon: Icon(Icons.card_giftcard),
             label: 'Product',
           ),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Orders',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.remove_red_eye_sharp),
             label: 'Views',

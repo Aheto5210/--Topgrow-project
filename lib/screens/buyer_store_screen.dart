@@ -15,12 +15,15 @@ class BuyerStoreScreen extends StatelessWidget {
 
   // Function to initiate phone call
   Future<void> _callFarmer(BuildContext context, String? phoneNumber) async {
+    print('DEBUG: phoneNumber = $phoneNumber'); // 🔍
+
     if (phoneNumber == null || phoneNumber.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Phone number not available')),
       );
       return;
     }
+
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
     if (await canLaunchUrl(phoneUri)) {
       await launchUrl(phoneUri);

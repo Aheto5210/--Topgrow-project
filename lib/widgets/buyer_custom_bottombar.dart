@@ -34,6 +34,10 @@ class BuyerCustomBottombar extends StatelessWidget {
             label: 'Store',
           ),
           BottomNavigationBarItem(
+              icon: Icon(Icons.list),
+            label: 'Orders'
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.favorite_outlined),
             label: 'Interest',
           ),

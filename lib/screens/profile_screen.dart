@@ -200,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             Container(
-              height: size.height * 0.12,
+              height: size.height * 0.20,
               color: const Color(0xffF8FFFB),
               child: Center(
                 child: Text(

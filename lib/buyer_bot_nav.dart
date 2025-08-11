@@ -3,6 +3,7 @@ import 'package:top_grow_project/screens/buyer_home_screen.dart';
 import 'package:top_grow_project/screens/buyer_interest_screen.dart';
 import 'package:top_grow_project/screens/buyer_profile_screen.dart';
 import 'package:top_grow_project/screens/buyer_store_screen.dart';
+import 'package:top_grow_project/screens/order_screen.dart';
 import 'package:top_grow_project/widgets/buyer_custom_bottombar.dart';
 
 class BuyerBotNav extends StatefulWidget {
@@ -19,8 +20,10 @@ class _BuyerBotNavState extends State<BuyerBotNav> {
   final List<Widget> _widgetOptions = const [
     BuyerHomeScreen(),
     BuyerStoreScreen(),
+    OrderScreen(),
     BuyerInterestScreen(),
     BuyerProfileScreen(),
+
   ];
 
   void _onItemTapped(int index) {

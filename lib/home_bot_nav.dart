@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:top_grow_project/screens/farmer_home_screen.dart';
+import 'package:top_grow_project/screens/farmer_orderscreen.dart';
 import 'package:top_grow_project/screens/product_screen.dart';
 import 'package:top_grow_project/screens/profile_screen.dart';
 import 'package:top_grow_project/screens/views_screen.dart';
@@ -19,6 +20,7 @@ class _HomeBotnavState extends State<HomeBotnav> {
   final List<Widget> _widgetOptions = const [
     FarmerHomeScreen(),
     ProductScreen(),
+    FarmerOrderscreen(),
     ViewsScreen(),
     ProfileScreen(),
   ];
