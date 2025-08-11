@@ -406,27 +406,79 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                         Expanded(
                           child: GestureDetector(
                             onTap: () => _callFarmer(product.phoneNumber),
-                            child: Container(
+                            child:Container(
                               decoration: BoxDecoration(
-                                color: const Color(0xff3B8751),
+                                color: Colors.transparent, // Transparent fill
                                 borderRadius: BorderRadius.circular(5),
+                                border: Border.all(
+                                  color: const Color(0xff3B8751), // Green border
+                                  width: 1.5,
+                                ),
                               ),
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 15,
-                                  vertical: 10,
+                                  vertical: 12,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
                                       Icons.phone_in_talk_outlined,
-                                      color: Colors.white,
+                                      color: Color(0xff3B8751), // Icon matches border color
                                       size: 14,
                                     ),
                                     SizedBox(width: 6),
                                     Text(
                                       'Call Farmer',
+                                      style: TextStyle(
+                                        color: Color(0xff3B8751), // Text matches border color
+                                        fontSize: 14,
+                                   ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10), // spacing between buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              // Handle Buy Product logic here
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Buy Product button clicked'),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xff3B8751), // gold/yellow color
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.shopping_cart_checkout_outlined,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Buy Product',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 14,
