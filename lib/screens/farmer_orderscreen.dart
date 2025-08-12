@@ -2,8 +2,8 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:top_grow_project/home_bot_nav.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:top_grow_project/home_bot_nav.dart';
 
 class FarmerOrderscreen extends StatefulWidget {
   const FarmerOrderscreen({super.key});
@@ -86,7 +86,7 @@ class _FarmerOrderscreenState extends State<FarmerOrderscreen>
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () {
-            Navigator.pushReplacementNamed(context,HomeBotnav.id);
+            Navigator.pushReplacementNamed(context, HomeBotnav.id);
           },
         ),
         bottom: TabBar(
@@ -148,6 +148,10 @@ class _FarmerOrderscreenState extends State<FarmerOrderscreen>
             final dropdownValue = uiStatusFromFirestore(firestoreStatus);
 
             final buyerId = order.get('buyerId') as String? ?? '';
+
+            final unitPrice = (order.get('price') ?? 0) as num;
+            final quantity = (order.get('quantity') ?? 0) as num;
+            final totalPrice = unitPrice * quantity;
 
             return Card(
               elevation: 3,
@@ -212,10 +216,19 @@ class _FarmerOrderscreenState extends State<FarmerOrderscreen>
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      'Quantity: ${order.get('quantity') ?? 'N/A'}',
+                                      'Quantity: $quantity',
                                       style: const TextStyle(
                                         color: Colors.black87,
                                         fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Price: GH₵ ${totalPrice.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold
                                       ),
                                     ),
                                     const SizedBox(height: 4),
