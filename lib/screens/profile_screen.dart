@@ -200,8 +200,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             Container(
-              height: size.height * 0.20,
-              color: const Color(0xffF8FFFB),
+              height: size.height * 0.15,
+              color: const Color(0xff3B8751),
               child: Center(
                 child: Text(
                   'User Profile',
@@ -209,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fontFamily: 'qwerty',
                     fontWeight: FontWeight.w600,
                     fontSize: textScaler.scale(size.width * 0.05).clamp(18, 20),
-                    color: primaryGreen,
+                    color: Colors.white,
                   ),
                 ),
               ),

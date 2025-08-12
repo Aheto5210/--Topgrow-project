@@ -200,8 +200,8 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
         child: Column(
           children: [
             Container(
-              height: size.height * 0.12,
-              color: const Color(0xffF8FFFB),
+              height: size.height * 0.15,
+              color: const Color(0xff3B8751),
               child: Center(
                 child: Text(
                   'User Profile',
@@ -209,7 +209,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                     fontFamily: 'qwerty',
                     fontWeight: FontWeight.w600,
                     fontSize: textScaler.scale(size.width * 0.05).clamp(18, 20),
-                    color: primaryGreen,
+                    color: Colors.white,
                   ),
                 ),
               ),
