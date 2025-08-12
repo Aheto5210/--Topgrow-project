@@ -29,6 +29,8 @@ dependencies:
   connectivity_plus: ^6.1.4
   intl: ^0.20.2
   auto_size_text: ^3.0.0
+  pay_with_paystack: ^1.0.4
+  webview_flutter: ^4.8.0
 
 
 dev_dependencies:

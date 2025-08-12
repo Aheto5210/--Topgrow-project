@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:top_grow_project/widgets/product_dialogue.dart'; // Add this import
 
 import '../constants.dart';
 import '../models/product.dart';
@@ -406,7 +407,7 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                         Expanded(
                           child: GestureDetector(
                             onTap: () => _callFarmer(product.phoneNumber),
-                            child:Container(
+                            child: Container(
                               decoration: BoxDecoration(
                                 color: Colors.transparent, // Transparent fill
                                 borderRadius: BorderRadius.circular(5),
@@ -434,7 +435,7 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                       style: TextStyle(
                                         color: Color(0xff3B8751), // Text matches border color
                                         fontSize: 14,
-                                   ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -444,18 +445,17 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 10), // spacing between buttons
                     Row(
                       children: [
                         Expanded(
                           child: GestureDetector(
                             onTap: () {
-                              // Handle Buy Product logic here
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Buy Product button clicked'),
-                                ),
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => BuyProductDialog(product: product),
                               );
                             },
                             child: Container(
@@ -698,24 +698,20 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                               Column(
                                                 children: [
                                                   Text(
-                                                    'GH₵ ${product.price.toStringAsFixed(0)}',
+                                                    'GH₵ ${otherProduct.price.toStringAsFixed(0)}',
                                                     style: const TextStyle(
                                                       fontSize: 14,
                                                       color: Color(0xff3B8751),
                                                       fontWeight: FontWeight.bold,
                                                     ),
                                                   ),
-
                                                 ],
                                               ),
-
                                             ],
-
                                           ),
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-
                                               const Icon(
                                                 Icons.location_on,
                                                 size: 14,
@@ -723,7 +719,7 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                               ),
                                               Expanded(
                                                 child: Text(
-                                                  product.location,
+                                                  otherProduct.location,
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     color: Colors.grey,
@@ -732,7 +728,7 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                                 ),
                                               ),
                                               Text(
-                                                product.size,
+                                                otherProduct.size,
                                                 style: const TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.grey,
@@ -745,7 +741,7 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                             children: [
                                               Expanded(
                                                 child: GestureDetector(
-                                                  onTap: () => _callFarmer(context as String?),
+                                                  onTap: () => _callFarmer(otherProduct.phoneNumber),
                                                   child: Container(
                                                     decoration: BoxDecoration(
                                                       color: const Color(0xff3B8751),
@@ -779,18 +775,17 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                                                 ),
                                               ),
                                               IconButton(
-                                                onPressed: () => _markInterested(context, product),
+                                                onPressed: () => _markInterested(context, otherProduct),
                                                 icon: Icon(
-                                                  isInterested ? Icons.favorite : Icons.favorite_border,
-                                                  color: isInterested ? Colors.red : Colors.grey,
+                                                  isOtherProductInterested ? Icons.favorite : Icons.favorite_border,
+                                                  color: isOtherProductInterested ? Colors.red : Colors.grey,
                                                 ),
                                               ),
                                             ],
                                           ),
-
                                         ],
                                       ),
-                                    ), //ends here
+                                    ),
                                   ],
                                 ),
                               ),
@@ -802,7 +797,6 @@ class _BuyerProductDetailsScreenState extends State<BuyerProductDetailsScreen> {
                   ],
                 ),
               ),
-
               SizedBox(height: (screenHeight * 0.03).clamp(16, 24)),
             ],
           ),

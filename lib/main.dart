@@ -13,7 +13,9 @@ import 'package:top_grow_project/screens/buyer_search_screen.dart';
 import 'package:top_grow_project/screens/buyer_store_screen.dart';
 import 'package:top_grow_project/screens/contact_top_screen.dart';
 import 'package:top_grow_project/screens/farmer_home_screen.dart';
+import 'package:top_grow_project/screens/farmer_orderscreen.dart';
 import 'package:top_grow_project/screens/filter_screen.dart';
+import 'package:top_grow_project/screens/order_screen.dart';
 import 'package:top_grow_project/screens/product_details_screen.dart';
 import 'package:top_grow_project/screens/product_screen.dart';
 import 'package:top_grow_project/screens/profile_screen.dart';
@@ -72,6 +74,7 @@ class MyApp extends StatelessWidget {
           FilterScreen.id: (context) => FilterScreen(),
           ProductDetailsScreen.id : (context) => ProductDetailsScreen(),
           BuyerBotNav.id : (context) => BuyerBotNav(),
+          OrderScreen.id: (context) => OrderScreen(),
           BuyerStoreScreen.id : (context) => BuyerStoreScreen(),
           BuyerInterestScreen.id : (context) => BuyerInterestScreen(),
           BuyerProfileScreen.id : (context) => BuyerProfileScreen(),
@@ -80,6 +83,8 @@ class MyApp extends StatelessWidget {
           AboutTopgrowScreen.id : (context) => AboutTopgrowScreen(),
           ContactTopScreen.id: (context) => ContactTopScreen(),
           BuyerProductDetailsScreen.id:(context) => BuyerProductDetailsScreen(),
+          FarmerOrderscreen.id: (context) => FarmerOrderscreen(),
+
         },
       ),
     );

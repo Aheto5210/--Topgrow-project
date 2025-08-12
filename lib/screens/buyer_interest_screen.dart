@@ -103,341 +103,339 @@ class _BuyerInterestScreenState extends State<BuyerInterestScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final scaleFactor = screenWidth / 375.0; // Reference width (e.g., iPhone 8)
 
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          centerTitle: true,
-          title: AutoSizeText(
-            'Interested Products',
-            style: const TextStyle(
-              fontFamily: 'qwerty',
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-              color: Colors.white,
-            ),
-            maxLines: 1,
-            minFontSize: 16,
-            overflow: TextOverflow.ellipsis,
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: AutoSizeText(
+          'Interested Products',
+          style: const TextStyle(
+            fontFamily: 'qwerty',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: Colors.white,
           ),
-          backgroundColor: const Color(0xff3B8751),
+          maxLines: 1,
+          minFontSize: 16,
+          overflow: TextOverflow.ellipsis,
         ),
-        body: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 16.0 * scaleFactor,
-                vertical: 8.0 * scaleFactor,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
+        backgroundColor: const Color(0xff3B8751),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 16.0 * scaleFactor,
+              vertical: 8.0 * scaleFactor,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: AutoSizeText(
+                    'Interested Products:',
+                    style: TextStyle(
+                      fontSize: 16 * scaleFactor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    minFontSize: 12,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: screenWidth * 0.3,
+                    minWidth: 80.0,
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final products = await _fetchProductsFromInterests(
+                        (await FirebaseFirestore.instance
+                            .collection('Interests')
+                            .where('buyerId', isEqualTo: currentUser?.uid)
+                            .get())
+                            .docs,
+                      );
+                      await _clearAllInterests(products);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white70,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5 * scaleFactor),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10 * scaleFactor,
+                        vertical: 6 * scaleFactor,
+                      ),
+                    ),
                     child: AutoSizeText(
-                      'Interested Products:',
+                      'Clear',
                       style: TextStyle(
-                        fontSize: 16 * scaleFactor,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        fontSize: 14 * scaleFactor,
                       ),
                       maxLines: 1,
-                      minFontSize: 12,
-                      overflow: TextOverflow.ellipsis,
+                      minFontSize: 10,
                     ),
                   ),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: screenWidth * 0.3,
-                      minWidth: 80.0,
-                    ),
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final products = await _fetchProductsFromInterests(
-                          (await FirebaseFirestore.instance
-                              .collection('Interests')
-                              .where('buyerId', isEqualTo: currentUser?.uid)
-                              .get())
-                              .docs,
-                        );
-                        await _clearAllInterests(products);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white70,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5 * scaleFactor),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10 * scaleFactor,
-                          vertical: 6 * scaleFactor,
-                        ),
-                      ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('Interests')
+                  .where('buyerId', isEqualTo: currentUser?.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       child: AutoSizeText(
-                        'Clear',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14 * scaleFactor,
-                        ),
-                        maxLines: 1,
+                        'Error: ${snapshot.error}',
+                        style: TextStyle(fontSize: 14 * scaleFactor),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
                         minFontSize: 10,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('Interests')
-                    .where('buyerId', isEqualTo: currentUser?.uid)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+                  );
+                }
 
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: AutoSizeText(
-                          'Error: ${snapshot.error}',
-                          style: TextStyle(fontSize: 14 * scaleFactor),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          minFontSize: 10,
-                        ),
+                if (snapshot.data?.docs.isEmpty ?? true) {
+                  return Center(
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: AutoSizeText(
+                        'No interested products yet',
+                        style: TextStyle(fontSize: 16 * scaleFactor),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        minFontSize: 12,
                       ),
-                    );
-                  }
+                    ),
+                  );
+                }
 
-                  if (snapshot.data?.docs.isEmpty ?? true) {
-                    return Center(
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: AutoSizeText(
-                          'No interested products yet',
-                          style: TextStyle(fontSize: 16 * scaleFactor),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          minFontSize: 12,
+                return FutureBuilder<List<Product>>(
+                  future: _fetchProductsFromInterests(snapshot.data!.docs),
+                  builder: (context, productSnapshot) {
+                    if (productSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (productSnapshot.hasError) {
+                      return Center(
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: AutoSizeText(
+                            'Error: ${productSnapshot.error}',
+                            style: TextStyle(fontSize: 14 * scaleFactor),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            minFontSize: 10,
+                          ),
                         ),
-                      ),
-                    );
-                  }
+                      );
+                    }
 
-                  return FutureBuilder<List<Product>>(
-                    future: _fetchProductsFromInterests(snapshot.data!.docs),
-                    builder: (context, productSnapshot) {
-                      if (productSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (productSnapshot.hasError) {
-                        return Center(
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: AutoSizeText(
-                              'Error: ${productSnapshot.error}',
-                              style: TextStyle(fontSize: 14 * scaleFactor),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              minFontSize: 10,
-                            ),
+                    if (!productSnapshot.hasData || productSnapshot.data!.isEmpty) {
+                      return Center(
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: AutoSizeText(
+                            'No products found',
+                            style: TextStyle(fontSize: 16 * scaleFactor),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            minFontSize: 12,
                           ),
-                        );
-                      }
+                        ),
+                      );
+                    }
 
-                      if (!productSnapshot.hasData || productSnapshot.data!.isEmpty) {
-                        return Center(
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: AutoSizeText(
-                              'No products found',
-                              style: TextStyle(fontSize: 16 * scaleFactor),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              minFontSize: 12,
+                    final products = productSnapshot.data!;
+
+                    return RefreshIndicator(
+                      onRefresh: _refreshInterests,
+                      color: const Color(0xff3B8751),
+                      child: ListView.builder(
+                        padding: EdgeInsets.all(8.0 * scaleFactor),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          final product = products[index];
+
+                          // Format the postedDate using DateFormat
+                          String formattedDate;
+                          if (product.postedDate is Timestamp) {
+                            formattedDate = DateFormat('MMM d, yyyy').format(
+                              (product.postedDate as Timestamp).toDate(),
+                            );
+                          } else {
+                            formattedDate = DateFormat('MMM d, yyyy').format(DateTime.now());
+                          }
+
+                          return GestureDetector(
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              BuyerProductDetailsScreen.id,
+                              arguments: product,
                             ),
-                          ),
-                        );
-                      }
-
-                      final products = productSnapshot.data!;
-
-                      return RefreshIndicator(
-                        onRefresh: _refreshInterests,
-                        color: const Color(0xff3B8751),
-                        child: ListView.builder(
-                          padding: EdgeInsets.all(8.0 * scaleFactor),
-                          itemCount: products.length,
-                          itemBuilder: (context, index) {
-                            final product = products[index];
-
-                            // Format the postedDate using DateFormat
-                            String formattedDate;
-                            if (product.postedDate is Timestamp) {
-                              formattedDate = DateFormat('MMM d, yyyy').format(
-                                (product.postedDate as Timestamp).toDate(),
-                              );
-                            } else {
-                              formattedDate = DateFormat('MMM d, yyyy').format(DateTime.now());
-                            }
-
-                            return GestureDetector(
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                BuyerProductDetailsScreen.id,
-                                arguments: product,
-                              ),
-                              child: Card(
-                                margin: EdgeInsets.symmetric(vertical: 8.0 * scaleFactor),
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.all(8.0 * scaleFactor),
-                                  leading: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8 * scaleFactor),
-                                    child: Image.network(
-                                      product.imageUrls.isNotEmpty
-                                          ? product.imageUrls[0]
-                                          : '',
-                                      width: 60 * scaleFactor,
-                                      height: 60 * scaleFactor,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Icon(
-                                            Icons.image_not_supported,
-                                            size: 40 * scaleFactor,
-                                          ),
-                                    ),
-                                  ),
-                                  title: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Flexible(
-                                        child: AutoSizeText(
-                                          product.name,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16 * scaleFactor,
-                                          ),
-                                          maxLines: 1,
-                                          minFontSize: 12,
-                                          overflow: TextOverflow.ellipsis,
+                            child: Card(
+                              margin: EdgeInsets.symmetric(vertical: 8.0 * scaleFactor),
+                              child: ListTile(
+                                contentPadding: EdgeInsets.all(8.0 * scaleFactor),
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8 * scaleFactor),
+                                  child: Image.network(
+                                    product.imageUrls.isNotEmpty
+                                        ? product.imageUrls[0]
+                                        : '',
+                                    width: 60 * scaleFactor,
+                                    height: 60 * scaleFactor,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        Icon(
+                                          Icons.image_not_supported,
+                                          size: 40 * scaleFactor,
                                         ),
+                                  ),
+                                ),
+                                title: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: AutoSizeText(
+                                        product.name,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16 * scaleFactor,
+                                        ),
+                                        maxLines: 1,
+                                        minFontSize: 12,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      SizedBox(width: 8 * scaleFactor),
-                                      Flexible(
-                                        child: RichText(
-                                          text: TextSpan(
-                                            children: [
-                                              TextSpan(
-                                                text: 'Date Posted: ',
-                                                style: TextStyle(
-                                                  fontSize: 10 * scaleFactor,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: const Color(0xff3B8751),
-                                                ),
+                                    ),
+                                    SizedBox(width: 8 * scaleFactor),
+                                    Flexible(
+                                      child: RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: 'Date Posted: ',
+                                              style: TextStyle(
+                                                fontSize: 10 * scaleFactor,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xff3B8751),
                                               ),
-                                              TextSpan(
-                                                text: formattedDate,
-                                                style: TextStyle(
-                                                  fontSize: 10 * scaleFactor,
-                                                  color: Colors.grey,
+                                            ),
+                                            TextSpan(
+                                              text: formattedDate,
+                                              style: TextStyle(
+                                                fontSize: 10 * scaleFactor,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Flexible(
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.location_on,
+                                                size: 16 * scaleFactor,
+                                                color: const Color(0xffDA4240),
+                                              ),
+                                              SizedBox(width: 2 * scaleFactor),
+                                              Flexible(
+                                                child: AutoSizeText(
+                                                  product.location,
+                                                  style: TextStyle(
+                                                    fontSize: 14 * scaleFactor,
+                                                  ),
+                                                  maxLines: 1,
+                                                  minFontSize: 10,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Flexible(
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.location_on,
-                                                  size: 16 * scaleFactor,
-                                                  color: const Color(0xffDA4240),
-                                                ),
-                                                SizedBox(width: 2 * scaleFactor),
-                                                Flexible(
-                                                  child: AutoSizeText(
-                                                    product.location,
+                                        ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth: screenWidth * 0.4,
+                                            minWidth: 80.0,
+                                          ),
+                                          child: GestureDetector(
+                                            onTap: () => _callFarmer(context, product.phoneNumber),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xff3B8751),
+                                                borderRadius: BorderRadius.circular(5 * scaleFactor),
+                                              ),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10 * scaleFactor,
+                                                vertical: 6 * scaleFactor,
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.phone_in_talk_outlined,
+                                                    color: Colors.white,
+                                                    size: 14 * scaleFactor,
+                                                  ),
+                                                  SizedBox(width: 6 * scaleFactor),
+                                                  AutoSizeText(
+                                                    'Call Farmer',
                                                     style: TextStyle(
+                                                      color: Colors.white,
                                                       fontSize: 14 * scaleFactor,
                                                     ),
                                                     maxLines: 1,
                                                     minFontSize: 10,
-                                                    overflow: TextOverflow.ellipsis,
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          ConstrainedBox(
-                                            constraints: BoxConstraints(
-                                              maxWidth: screenWidth * 0.4,
-                                              minWidth: 80.0,
-                                            ),
-                                            child: GestureDetector(
-                                              onTap: () => _callFarmer(context, product.phoneNumber),
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xff3B8751),
-                                                  borderRadius: BorderRadius.circular(5 * scaleFactor),
-                                                ),
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 10 * scaleFactor,
-                                                  vertical: 6 * scaleFactor,
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.phone_in_talk_outlined,
-                                                      color: Colors.white,
-                                                      size: 14 * scaleFactor,
-                                                    ),
-                                                    SizedBox(width: 6 * scaleFactor),
-                                                    AutoSizeText(
-                                                      'Call Farmer',
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 14 * scaleFactor,
-                                                      ),
-                                                      maxLines: 1,
-                                                      minFontSize: 10,
-                                                    ),
-                                                  ],
-                                                ),
+                                                ],
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

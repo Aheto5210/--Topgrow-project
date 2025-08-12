@@ -33,10 +33,11 @@ class _HomeBotnavState extends State<HomeBotnav> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
-      body: _widgetOptions.elementAt(_selectedIndex), // Display the selected screen
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _widgetOptions,
+      ),
       bottomNavigationBar: CustomBottomBarNav(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

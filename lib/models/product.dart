@@ -13,6 +13,7 @@ class Product {
   final List<String> interestedBuyers;
   final String farmerId;
 
+
   Product({
     required this.id,
     required this.name,
@@ -59,3 +60,5 @@ class Product {
     };
   }
 }
+
+

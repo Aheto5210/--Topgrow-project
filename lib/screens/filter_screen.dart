@@ -78,38 +78,34 @@ class _FilterScreenState extends State<FilterScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: iykBackgroundColor,
-        body: Column(
-          children: [
+    return Scaffold(
+      backgroundColor: iykBackgroundColor,
+      body: Column(
+        children: [
+          FilterHeader(),
+          FilterTextField(
+            nameController: _nameController,
+            locationController: _locationController,
+            onNameChanged: _updateNameQuery,
+            onLocationChanged: _updateLocationQuery,
+          ),
 
-            FilterHeader(),
-
-            FilterTextField(
-              nameController: _nameController,
-              locationController: _locationController,
-              onNameChanged: _updateNameQuery,
-              onLocationChanged: _updateLocationQuery,
+          Expanded(
+            child: FilterResults(
+              isSearchPressed: _isSearchPressed,
+              nameQuery: _nameQuery,
+              locationQuery: _locationQuery,
             ),
-
-            Expanded(
-              child: FilterResults(
-                isSearchPressed: _isSearchPressed,
-                nameQuery: _nameQuery,
-                locationQuery: _locationQuery,
-              ),
-            ),
-            // Bottom bar with Clear and Search buttons
-            FilterBottomBar(
-              onClear: _clearFilters,
-              onSearch: _triggerSearch,
-              canSearch: _canSearch(),
-              screenWidth: screenWidth,
-              screenHeight: screenHeight,
-            ),
-          ],
-        ),
+          ),
+          // Bottom bar with Clear and Search buttons
+          FilterBottomBar(
+            onClear: _clearFilters,
+            onSearch: _triggerSearch,
+            canSearch: _canSearch(),
+            screenWidth: screenWidth,
+            screenHeight: screenHeight,
+          ),
+        ],
       ),
     );
   }

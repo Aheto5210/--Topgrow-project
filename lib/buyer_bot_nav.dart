@@ -8,14 +8,19 @@ import 'package:top_grow_project/widgets/buyer_custom_bottombar.dart';
 
 class BuyerBotNav extends StatefulWidget {
   static String id = 'buyer_botnav';
-  const BuyerBotNav({super.key});
+  final int initialIndex;
+
+  const BuyerBotNav({
+    super.key,
+    this.initialIndex = 0, // default to first tab
+  });
 
   @override
   State<BuyerBotNav> createState() => _BuyerBotNavState();
 }
 
 class _BuyerBotNavState extends State<BuyerBotNav> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
 
   final List<Widget> _widgetOptions = const [
     BuyerHomeScreen(),
@@ -23,18 +28,27 @@ class _BuyerBotNavState extends State<BuyerBotNav> {
     OrderScreen(),
     BuyerInterestScreen(),
     BuyerProfileScreen(),
-
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _widgetOptions.elementAt(_selectedIndex),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _widgetOptions,
+      ),
       bottomNavigationBar: BuyerCustomBottombar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

@@ -43,45 +43,43 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Scaffold(
       backgroundColor: iykBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            CustomAppbarSearch(
-              title: 'Products/Items',
-              controller: _searchController,
-            ),
-            Expanded(
-              child: _searchQuery.isEmpty
-                  ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.search,
-                      size: screenWidth * 0.12,
+      body: Column(
+        children: [
+          CustomAppbarSearch(
+            title: 'Products/Items',
+            controller: _searchController,
+          ),
+          Expanded(
+            child: _searchQuery.isEmpty
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search,
+                    size: screenWidth * 0.12,
+                    color: Colors.black54,
+                  ),
+                  SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
+                  Text(
+                    'Start searching for products',
+                    style: TextStyle(
+                      fontFamily: 'qwerty',
+                      fontSize: textScaler
+                          .scale(screenWidth * 0.045)
+                          .clamp(14, 18),
                       color: Colors.black54,
                     ),
-                    SizedBox(height: (screenHeight * 0.02).clamp(8, 16)),
-                    Text(
-                      'Start searching for products',
-                      style: TextStyle(
-                        fontFamily: 'qwerty',
-                        fontSize: textScaler
-                            .scale(screenWidth * 0.045)
-                            .clamp(14, 18),
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-                  : SearchResults(
-                searchQuery: _searchQuery,
-                onRetry: _retrySearch,
+                  ),
+                ],
               ),
+            )
+                : SearchResults(
+              searchQuery: _searchQuery,
+              onRetry: _retrySearch,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
