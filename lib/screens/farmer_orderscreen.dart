@@ -41,7 +41,7 @@ class _FarmerOrderscreenState extends State<FarmerOrderscreen>
   String firestoreStatusFromUI(String uiStatus) {
     switch (uiStatus) {
       case 'pending':
-        return 'pending_cod';
+        return 'pending_cod'; // still used for completed orders, keep if needed
       case 'completed':
         return 'completed';
       case 'cancelled':
@@ -113,19 +113,24 @@ class _FarmerOrderscreenState extends State<FarmerOrderscreen>
   }
 
   Widget _buildOrdersList(String status, Color statusColor) {
-    final queryStatus = firestoreStatusFromUI(status);
-
     if (currentFarmerId.isEmpty) {
       // No logged in user, show message
       return const Center(child: Text('No farmer logged in.'));
     }
 
+    Query query = FirebaseFirestore.instance
+        .collection('orders')
+        .where('farmerId', isEqualTo: currentFarmerId);
+
+    // Here is the fix: pending tab shows both 'pending' and 'pending_cod'
+    if (status == 'pending') {
+      query = query.where('status', whereIn: ['pending', 'pending_cod']);
+    } else {
+      query = query.where('status', isEqualTo: firestoreStatusFromUI(status));
+    }
+
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('orders')
-          .where('farmerId', isEqualTo: currentFarmerId)
-          .where('status', isEqualTo: queryStatus)
-          .snapshots(),
+      stream: query.snapshots(includeMetadataChanges: true),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -137,7 +142,12 @@ class _FarmerOrderscreenState extends State<FarmerOrderscreen>
           return const Center(child: Text('No orders found.'));
         }
 
-        final orders = snapshot.data!.docs;
+        // Filter out documents with pending writes to avoid duplicates during updates
+        final orders = snapshot.data!.docs.where((doc) => !doc.metadata.hasPendingWrites).toList();
+
+        if (orders.isEmpty) {
+          return const Center(child: Text('No orders found.'));
+        }
 
         return ListView.builder(
           padding: const EdgeInsets.all(10),
@@ -228,7 +238,7 @@ class _FarmerOrderscreenState extends State<FarmerOrderscreen>
                                       style: const TextStyle(
                                         color: Colors.green,
                                         fontSize: 14,
-                                        fontWeight: FontWeight.bold
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     const SizedBox(height: 4),

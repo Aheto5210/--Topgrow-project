@@ -1,6 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:pay_with_paystack/pay_with_paystack.dart';
 import 'package:top_grow_project/models/product.dart';
 import 'package:top_grow_project/screens/order_screen.dart';
@@ -20,54 +23,88 @@ class _BuyProductDialogState extends State<BuyProductDialog> {
   int _quantity = 1;
   final OrderService _orderService = OrderService();
 
+  /// Public key for client-side payments (Test mode here)
   final String _paystackPublicKey = 'pk_test_c4af31d3cb2e8d31e88269225508857335ba30cc';
 
-  Future<bool> _makePayment(double amount, String email, String reference) async {
+  /// Secret key for server-side verification (Test mode here)
+  final String _paystackSecretKey = 'sk_test_db6d7259654c7c1f5838f8b4e47ea5fcf43003b5';
+
+  Future<bool> _makePayment(double amount, String phoneNumber, String reference) async {
+    final Completer<bool> completer = Completer<bool>();
+
     try {
-      final result = await PayWithPayStack().now(
+      if (amount <= 0) {
+        _showSnackBar('Invalid payment amount');
+        return false;
+      }
+      if (phoneNumber.isEmpty || !RegExp(r'^\+?\d{10,15}$').hasMatch(phoneNumber)) {
+        _showSnackBar('Invalid phone number');
+        return false;
+      }
+
+      final customerEmail = '${phoneNumber.replaceAll('+', '')}@yourapp.com';
+
+      PayWithPayStack().now(
         context: context,
-        secretKey: _paystackPublicKey,
-        customerEmail: email,
+        secretKey: _paystackSecretKey,
+        customerEmail: customerEmail,
         reference: reference,
         currency: 'GHS',
-        amount: amount * 100,
+        amount: (amount * 1),
         callbackUrl: 'https://us-central1-your-project-id.cloudfunctions.net/paymentCallback',
-        transactionCompleted: (data) {
+        transactionCompleted: (data) async {
           debugPrint("Transaction Completed: ${data.reference}");
+          final verified = await _verifyPayment(reference);
+          if (verified) {
+            debugPrint("Payment Verified: $reference");
+            if (!completer.isCompleted) completer.complete(true);
+          } else {
+            _showSnackBar('Payment verification failed');
+            if (!completer.isCompleted) completer.complete(false);
+          }
         },
         transactionNotCompleted: (message) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Payment failed: $message')),
-          );
           debugPrint("Transaction Not Completed: $message");
+          if (!completer.isCompleted) completer.complete(false);
         },
       );
 
-      if (result != null && result.status == 'success') {
-        debugPrint("Payment Initiated: ${result.reference}");
-        return true;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment was cancelled or failed')),
-        );
-        debugPrint("Payment Failed or Cancelled: ${result?.status}");
+      // Wait here until completer completes from callbacks
+      return completer.future;
+    } catch (e, st) {
+      debugPrint("Payment error: $e\n$st");
+      _showSnackBar('Payment error occurred. Please try again.');
+      return false;
+    }
+  }
+
+  Future<bool> _verifyPayment(String reference) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://api.paystack.co/transaction/verify/$reference'),
+        headers: {
+          'Authorization': 'Bearer $_paystackSecretKey',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        debugPrint("Verification HTTP error: ${response.statusCode}");
         return false;
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment error: $e')),
-      );
-      debugPrint("Payment error: $e");
+
+      final data = jsonDecode(response.body);
+      return data['status'] == true && data['data']['status'] == 'success';
+    } catch (e, st) {
+      debugPrint("Verification error: $e\n$st");
       return false;
     }
   }
 
   Future<void> _placeOrder(BuildContext context) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please sign in to place an order')),
-      );
+    if (user == null || user.phoneNumber == null) {
+      _showSnackBar('Please sign in with a phone number to place an order');
       return;
     }
 
@@ -76,47 +113,50 @@ class _BuyProductDialogState extends State<BuyProductDialog> {
         widget.product.location.isEmpty ||
         widget.product.farmerId.isEmpty ||
         widget.product.id.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid product details')),
-      );
+      _showSnackBar('Invalid product details');
       return;
     }
 
     if (_quantity <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Quantity must be at least 1')),
-      );
+      _showSnackBar('Quantity must be at least 1');
       return;
     }
+
+    _showLoadingDialog();
 
     try {
       if (_selectedPaymentMethod == 'Pay Now') {
         final totalPrice = widget.product.price * _quantity;
         final reference = 'order_${DateTime.now().millisecondsSinceEpoch}';
-        final paymentSuccess = await _makePayment(totalPrice, user.email ?? 'user@example.com', reference);
+
+        final paymentSuccess = await _makePayment(totalPrice, user.phoneNumber!, reference);
+
         if (!paymentSuccess) {
+          Navigator.of(context, rootNavigator: true).pop();
           return;
         }
-        await _orderService.createOrder(
-          widget.product,
-          _quantity,
-          // buyerName and buyerContact removed here
-        );
+
+        _orderService.setPaymentDetails(_selectedPaymentMethod, reference);
       } else {
-        await _orderService.createOrder(
-          widget.product,
-          _quantity,
-          // buyerName and buyerContact removed here
-        );
+        _orderService.setPaymentDetails(_selectedPaymentMethod, null);
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Order placed successfully!')),
-      );
+      await _orderService.createOrder(widget.product, _quantity);
 
-      Navigator.pop(context);
-      await Navigator.pushReplacementNamed(context, OrderScreen.id);
+      Navigator.of(context, rootNavigator: true).pop(); // Close loading dialog
+
+      _showSnackBar('Order placed successfully!');
+
+      Navigator.pop(context); // Close the BuyProductDialog
+
+      // Navigate to OrderScreen straight after order creation
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const OrderScreen()),
+      );
     } on firestore.FirebaseException catch (e) {
+      Navigator.of(context, rootNavigator: true).pop();
+
       String errorMessage;
       switch (e.code) {
         case 'permission-denied':
@@ -126,16 +166,29 @@ class _BuyProductDialogState extends State<BuyProductDialog> {
           errorMessage = 'Network error. Please check your internet connection.';
           break;
         default:
-          errorMessage = 'Failed to place order: ${e.message}';
+          errorMessage = 'Failed to place order: ${e.message ?? e.code}';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unexpected error: $e')),
-      );
+      _showSnackBar(errorMessage);
+    } catch (e, st) {
+      Navigator.of(context, rootNavigator: true).pop();
+      debugPrint("Unexpected error placing order: $e\n$st");
+      _showSnackBar('Unexpected error occurred. Please try again.');
     }
+  }
+
+  void _showSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
   }
 
   @override
@@ -168,11 +221,7 @@ class _BuyProductDialogState extends State<BuyProductDialog> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPaymentMethod = 'Cash on Delivery';
-                    });
-                  },
+                  onTap: () => setState(() => _selectedPaymentMethod = 'Cash on Delivery'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
@@ -198,11 +247,7 @@ class _BuyProductDialogState extends State<BuyProductDialog> {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPaymentMethod = 'Pay Now';
-                    });
-                  },
+                  onTap: () => setState(() => _selectedPaymentMethod = 'Pay Now'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
@@ -243,11 +288,7 @@ class _BuyProductDialogState extends State<BuyProductDialog> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      if (_quantity > 1) {
-                        setState(() {
-                          _quantity--;
-                        });
-                      }
+                      if (_quantity > 1) setState(() => _quantity--);
                     },
                     icon: const Icon(Icons.remove, color: Color(0xff3B8751)),
                   ),
@@ -259,11 +300,7 @@ class _BuyProductDialogState extends State<BuyProductDialog> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _quantity++;
-                      });
-                    },
+                    onPressed: () => setState(() => _quantity++),
                     icon: const Icon(Icons.add, color: Color(0xff3B8751)),
                   ),
                 ],

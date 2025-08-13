@@ -6,20 +6,23 @@ import 'package:top_grow_project/models/product.dart';
 class OrderService {
   final firestore.FirebaseFirestore _firestore = firestore.FirebaseFirestore.instance;
 
+  String? _paymentMethod;
+  String? _paymentReference;
+
+  /// Setter for payment details from UI or payment process
+  void setPaymentDetails(String paymentMethod, String? paymentReference) {
+    _paymentMethod = paymentMethod;
+    _paymentReference = paymentReference;
+  }
+
   /// Creates a new order for the given product and quantity.
-  /// Includes fetching buyer's name and contact from users collection.
-  Future<void> createOrder(
-      Product product,
-      int quantity, {
-        String buyerName = '',
-        String buyerContact = '',
-      }) async {
+  /// Does NOT store buyer name/contact, only buyerId from Auth.
+  Future<void> createOrder(Product product, int quantity) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
       throw Exception('User not logged in');
     }
 
-    // Validate product fields
     if (product.name.isEmpty ||
         product.price <= 0 ||
         product.location.isEmpty ||
@@ -32,22 +35,6 @@ class OrderService {
       throw Exception('Quantity must be at least 1');
     }
 
-    // If buyerName or buyerContact not passed, fetch from Firestore
-    String finalBuyerName = buyerName;
-    String finalBuyerContact = buyerContact;
-    if (buyerName.isEmpty || buyerContact.isEmpty) {
-      final buyerDoc = await _firestore.collection('users').doc(userId).get();
-      if (!buyerDoc.exists) {
-        throw Exception('Buyer user data not found');
-      }
-      final buyerData = buyerDoc.data();
-      if (buyerData == null) {
-        throw Exception('Buyer user data is empty');
-      }
-      finalBuyerName = buyerData['fullName'] ?? 'Unknown Buyer';
-      finalBuyerContact = buyerData['phoneNumber'] ?? 'No Contact';
-    }
-
     final totalPrice = product.price * quantity;
 
     final order = Order(
@@ -56,18 +43,19 @@ class OrderService {
       price: product.price,
       location: product.location,
       quantity: quantity,
-      status: 'pending_cod', // Default status for COD
+      status: _paymentMethod == 'Pay Now' ? 'pending' : 'pending_cod',  // Changed here
       buyerId: userId,
       farmerId: product.farmerId,
       productId: product.id,
       createdAt: DateTime.now(),
       totalPrice: totalPrice,
-      reference: '', // Empty for COD
-
+      reference: _paymentReference ?? '',
     );
 
     try {
+      print('Creating order for user: $userId with status: ${order.status}');
       await _firestore.collection('orders').add(order.toFirestore());
+      print('Order created successfully');
     } on firestore.FirebaseException catch (e) {
       throw Exception('Failed to create order: ${e.message}');
     } catch (e) {

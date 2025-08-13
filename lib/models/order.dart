@@ -42,7 +42,7 @@ class Order {
       farmerId: data['farmerId'] ?? '',
       productId: data['productId'] ?? '',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
-      totalPrice: (data['totalPrice'] as num).toDouble(),
+      totalPrice: ((data['price'] as num).toDouble()) * (data['quantity'] ?? 1),
       reference: data['reference'] ?? '',
     );
   }

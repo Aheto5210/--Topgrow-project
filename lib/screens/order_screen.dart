@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:top_grow_project/models/order.dart';
-import 'package:top_grow_project/buyer_bot_nav.dart'; // Import BuyerBotNav screen
+import 'package:top_grow_project/buyer_bot_nav.dart';
 
 class OrderScreen extends StatefulWidget {
   static const String id = 'order_screen';
@@ -17,31 +17,9 @@ class OrderScreen extends StatefulWidget {
 
 class _OrderScreenState extends State<OrderScreen> {
   final user = FirebaseAuth.instance.currentUser;
-  late Future<List<Order>> _ordersFuture;
 
-  @override
-  void initState() {
-    super.initState();
-    _ordersFuture = fetchOrders();
-  }
-
-  Future<List<Order>> fetchOrders() async {
-    if (user == null) return [];
-    final snapshot = await firestore.FirebaseFirestore.instance
-        .collection('orders')
-        .where('buyerId', isEqualTo: user!.uid)
-        .get();
-    final orders = snapshot.docs.map((doc) => Order.fromFirestore(doc)).toList();
-    orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return orders;
-  }
-
-  Future<void> _handleRefresh() async {
-    final freshOrders = await fetchOrders();
-    setState(() {
-      _ordersFuture = Future.value(freshOrders);
-    });
-  }
+  // Add this key to control the RefreshIndicator
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
 
   String _formatStatus(String status) {
     switch (status) {
@@ -70,6 +48,13 @@ class _OrderScreenState extends State<OrderScreen> {
       default:
         return Colors.grey;
     }
+  }
+
+  // Pull to refresh handler: just trigger setState to refresh StreamBuilder
+  Future<void> _refreshOrders() async {
+    setState(() {
+      // Just rebuilding triggers StreamBuilder to reload fresh data
+    });
   }
 
   @override
@@ -109,7 +94,6 @@ class _OrderScreenState extends State<OrderScreen> {
           leading: IconButton(
             icon: const Icon(Icons.close, color: Colors.white),
             onPressed: () {
-              // Navigate to BuyerBotNav when closed
               Navigator.pushReplacementNamed(context, BuyerBotNav.id);
             },
           ),
@@ -134,53 +118,69 @@ class _OrderScreenState extends State<OrderScreen> {
             ],
           ),
         ),
-        body: RefreshIndicator(
-          color: const Color(0xff3B8751),
-          onRefresh: _handleRefresh,
-          child: FutureBuilder<List<Order>>(
-            future: _ordersFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xff3B8751)),
-                );
-              }
-              if (snapshot.hasError) {
-                return Center(
-                  child: Text(
-                    'Error: ${snapshot.error}',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                );
-              }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No orders found',
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                );
-              }
-
-              final allOrders = snapshot.data!;
-
-              final pendingOrders = allOrders
-                  .where((o) => o.status == 'pending' || o.status == 'pending_cod')
-                  .toList();
-              final completedOrders =
-              allOrders.where((o) => o.status == 'completed').toList();
-              final cancelledOrders =
-              allOrders.where((o) => o.status == 'cancelled').toList();
-
-              return TabBarView(
-                children: [
-                  _buildOrderList(pendingOrders),
-                  _buildOrderList(completedOrders),
-                  _buildOrderList(cancelledOrders),
-                ],
+        body: StreamBuilder<firestore.QuerySnapshot>(
+          stream: firestore.FirebaseFirestore.instance
+              .collection('orders')
+              .where('buyerId', isEqualTo: user!.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xff3B8751)),
               );
-            },
-          ),
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  'Error: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Center(
+                child: Text(
+                  'No orders found',
+                  style: TextStyle(color: Colors.black54),
+                ),
+              );
+            }
+
+            final allOrders = snapshot.data!.docs
+                .map((doc) => Order.fromFirestore(doc))
+                .toList();
+
+            // Sort by createdAt descending locally
+            allOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+            final pendingOrders = allOrders
+                .where((o) => o.status == 'pending' || o.status == 'pending_cod')
+                .toList();
+            final completedOrders =
+            allOrders.where((o) => o.status == 'completed').toList();
+            final cancelledOrders =
+            allOrders.where((o) => o.status == 'cancelled').toList();
+
+            return TabBarView(
+              children: [
+                RefreshIndicator(
+                  key: _refreshIndicatorKey,
+                  onRefresh: _refreshOrders,
+                  child: _buildOrderList(pendingOrders),
+                ),
+                RefreshIndicator(
+                  key: _refreshIndicatorKey,
+                  onRefresh: _refreshOrders,
+                  child: _buildOrderList(completedOrders),
+                ),
+                RefreshIndicator(
+                  key: _refreshIndicatorKey,
+                  onRefresh: _refreshOrders,
+                  child: _buildOrderList(cancelledOrders),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
